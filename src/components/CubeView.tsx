@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { CUBE_BOX } from "./cubeBox";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import {
   applyMoves,
   CubeState,
@@ -33,6 +34,9 @@ const COLORS: Record<Face, number> = {
   R: 0xff7612, // orange
   L: 0xd6122d, // red
 };
+/** Tile outline before the bevel (which adds 0.025 on each side), and its corner radius. */
+const TILE_SIZE = 0.82;
+const TILE_RADIUS = 0.2;
 /** The ivory plastic that shows in the gaps between tiles. */
 const BODY_COLOR = 0xd9d4c8;
 
@@ -88,9 +92,18 @@ function createScene(container: HTMLDivElement): Scene {
   scene.add(fill);
 
   // 27 cubies: an ivory body with a rounded, glossy tile for each sticker on it.
-  const body = new THREE.BoxGeometry(0.97, 0.97, 0.97);
+  const body = new RoundedBoxGeometry(0.97, 0.97, 0.97, 5, 0.13);
   const bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR, roughness: 0.6 });
-  const stickerGeo = new THREE.ShapeGeometry(roundedSquare(0.9, 0.14), 6);
+  // Each tile is a thin slab with beveled edges. Its back sinks into the body,
+  // so the rounded body corners never leave a gap under the tile.
+  const stickerGeo = new THREE.ExtrudeGeometry(roundedSquare(TILE_SIZE, TILE_RADIUS), {
+    depth: 0.02,
+    bevelEnabled: true,
+    bevelThickness: 0.02,
+    bevelSize: 0.025,
+    bevelSegments: 4,
+    curveSegments: 8,
+  });
   const cubies = new Map<string, THREE.Group>();
   for (let x = -1; x <= 1; x++)
     for (let y = -1; y <= 1; y++)
@@ -106,12 +119,11 @@ function createScene(container: HTMLDivElement): Scene {
     const mat = new THREE.MeshStandardMaterial({
       color: COLORS[s.face],
       roughness: 0.32,
-      side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(stickerGeo, mat);
     const n = new THREE.Vector3(...s.normal);
-    // Sit just above the body's face (0.485), facing outward.
-    mesh.position.copy(n.clone().multiplyScalar(0.488));
+    // The slab spans z = -0.02 to 0.04; put its front just above the body face (0.485).
+    mesh.position.copy(n.clone().multiplyScalar(0.452));
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
     cubies.get(posKey(s.pos))!.add(mesh);
     return mat;
