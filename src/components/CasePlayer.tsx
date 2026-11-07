@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Cube from "./Cube";
 import ShareButton from "./ShareButton";
 import Tabs from "./Tabs";
 import { applyMoves, formatMove, invertMoves, parseAlg, SOLVED, type Move } from "@/lib/cube";
 import type { Pattern } from "@/data/patterns";
+import { emitDopa, onDopaChange, useDopa } from "@/lib/dopa";
 
 type Mode = "alg" | "setup";
-type Speed = "slow" | "normal" | "fast";
+type Speed = "slow" | "normal" | "fast" | "dopa";
 
 /** Quarter-turn time and the pause after each move, in ms. */
 const SPEEDS: Record<Speed, { label: string; turn: number; pause: number }> = {
   slow: { label: "ゆっくり", turn: 700, pause: 900 },
   normal: { label: "ふつう", turn: 300, pause: 500 },
   fast: { label: "はやい", turn: 180, pause: 150 },
+  // ドパモード only: between ふつう and はやい.
+  dopa: { label: "ドパ", turn: 240, pause: 320 },
 };
 
 const turnTime = (move: Move, turn: number) => turn * (move.amount === 2 ? 2 : 1);
@@ -59,6 +62,50 @@ export default function CasePlayer({
     const timer = setTimeout(() => setPosition((p) => p + 1), delay);
     return () => clearTimeout(timer);
   }, [isPlaying, position, playFrom, moves, speed]);
+
+  // ドパモード: on switching it on, start auto play from the top at the ドパ
+  // speed (after the opening effect); on switching it off, restore the speed.
+  const dopa = useDopa();
+  const speedBeforeDopa = useRef<Speed>("slow");
+  useEffect(() => {
+    if (!showAnswer) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const off = onDopaChange((on) => {
+      clearTimeout(timer);
+      if (on) {
+        setSpeed((s) => {
+          if (s !== "dopa") speedBeforeDopa.current = s;
+          return "dopa";
+        });
+        setPlaying(false);
+        setPosition(0);
+        timer = setTimeout(() => {
+          setPlayFrom(0);
+          setPlaying(true);
+        }, 1200);
+      } else {
+        setSpeed((s) => (s === "dopa" ? speedBeforeDopa.current : s));
+      }
+    });
+    return () => {
+      off();
+      clearTimeout(timer);
+    };
+  }, [showAnswer]);
+
+  // ドパモード: celebrate each move once it has finished turning, and the end.
+  const lastPosition = useRef(position);
+  useEffect(() => {
+    const stepped = position === lastPosition.current + 1;
+    lastPosition.current = position;
+    if (!stepped || !showAnswer) return;
+    const move = moves[position - 1];
+    const finished = position === moves.length;
+    const turned = turnTime(move, SPEEDS[speed].turn);
+    // Not cleared on the next step, so quick clicks still get every burst.
+    setTimeout(() => emitDopa({ kind: "move", label: formatMove(move) }), turned);
+    if (finished) setTimeout(() => emitDopa({ kind: "done" }), turned + 450);
+  }, [position, moves, speed, showAnswer]);
 
   /** Any manual control stops playback first. */
   const go = (to: number) => {
@@ -153,7 +200,9 @@ export default function CasePlayer({
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted">速さ</span>
               <Tabs
-                options={(Object.keys(SPEEDS) as Speed[]).map((k) => [k, SPEEDS[k].label] as const)}
+                options={(Object.keys(SPEEDS) as Speed[])
+                  .filter((k) => k !== "dopa" || dopa)
+                  .map((k) => [k, SPEEDS[k].label] as const)}
                 value={speed}
                 onChange={setSpeed}
               />

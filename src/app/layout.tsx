@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import cubechan from "@/assets/cubechan.png";
+import DopaEffects from "@/components/DopaEffects";
+import Mascot from "@/components/Mascot";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,13 +22,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </Link>
         </header>
         {children}
-        {/* The mascot stands in front of the page; taps pass through to what's underneath. */}
-        <Image
-          src={cubechan}
-          alt=""
-          aria-hidden
-          className="pointer-events-none fixed right-3 bottom-3 z-50 w-20 drop-shadow-md select-none sm:right-5 sm:bottom-5 sm:w-28"
-        />
+        {/* The mascot stands in front of the page (and hides ドパモード's switch). */}
+        <Mascot />
+        <DopaEffects />
       </body>
     </html>
   );

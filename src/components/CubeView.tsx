@@ -466,7 +466,7 @@ export default function CubeView({
   }, [start, moves, position]);
 
   return (
-    <div className={CUBE_BOX} style={backgroundStyle(prefs)}>
+    <div className={CUBE_BOX} style={backgroundStyle(prefs)} data-cube-box>
       <div
         ref={containerRef}
         className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
