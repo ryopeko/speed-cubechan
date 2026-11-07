@@ -13,7 +13,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<"/patterns/[id]">) {
   const { id } = await props.params;
-  return { title: `${findPattern(id)?.name ?? "?"} | speed-cubechan` };
+  return { title: `${findPattern(id)?.name ?? "?"} | スピードキュービちゃん` };
 }
 
 export default function PatternPage(props: PageProps<"/patterns/[id]">) {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "speed-cubechan",
+  title: "スピードキュービちゃん",
   description: "OLL・PLL の練習ツール",
 };
 
@@ -20,19 +20,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ja">
       <body className="min-h-dvh leading-relaxed">
-        <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
+        <header className="flex items-center border-b border-line bg-surface px-4 py-3">
           <Link href="/" className="flex items-center gap-2 font-bold text-ink no-underline">
             <span className="grid grid-cols-3 gap-px rounded-sm bg-line p-px" aria-hidden>
               {LOGO_COLORS.map((c, i) => (
                 <span key={i} className={`size-2 rounded-[2px] ${c}`} />
               ))}
             </span>
-            speed-cubechan
+            スピードキュービちゃん
           </Link>
-          <nav className="flex gap-4">
-            <Link href="/">一覧</Link>
-            <Link href="/practice">練習</Link>
-          </nav>
         </header>
         {children}
       </body>

@@ -1,7 +1,7 @@
 import Main, { Title } from "@/components/Main";
 import Practice from "@/components/Practice";
 
-export const metadata = { title: "練習 | speed-cubechan" };
+export const metadata = { title: "練習 | スピードキュービちゃん" };
 
 export default function PracticePage() {
   return (
