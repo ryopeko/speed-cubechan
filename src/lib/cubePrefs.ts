@@ -26,7 +26,7 @@ export type CubePrefs = {
   contrast: number;
 };
 
-export const DEFAULT_PREFS: CubePrefs = { bg: "greige", grid: false, light: 2.5, contrast: 0.5 };
+export const DEFAULT_PREFS: CubePrefs = { bg: "gray", grid: true, light: 1.6, contrast: 0.4 };
 
 // Kept from when this only stored the background, so a saved choice survives.
 const KEY = "speed-cubechan:cube-background";
