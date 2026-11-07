@@ -5,6 +5,7 @@ import { CUBE_BOX } from "./cubeBox";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import {
   applyMoves,
   CubeState,
@@ -79,7 +80,7 @@ function cornerRadius(tileOffset: number, cornerDistance: number): number {
 }
 
 /** The ivory core plastic that shows in the gaps and under rounded corners. */
-const BODY_COLOR = 0xd9d4c8;
+const BODY_COLOR = 0xcfc9bb;
 
 /** Default time for a quarter turn. */
 export const QUARTER_TURN_MS = 300;
@@ -115,6 +116,10 @@ function createScene(container: HTMLDivElement): Scene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.NeutralToneMapping; // keeps the vivid plastic colors saturated
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -128,13 +133,34 @@ function createScene(container: HTMLDivElement): Scene {
   controls.enableZoom = false;
   controls.enableDamping = true;
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8478, 2.2));
-  const key = new THREE.DirectionalLight(0xffffff, 1.6);
-  key.position.set(3, 6, 4);
-  scene.add(key);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.6);
-  fill.position.set(-4, -2, -3);
-  scene.add(fill);
+  // Lighting, modeled on a cube on a desk under room light:
+  // - a soft room environment, for glossy reflections like real plastic;
+  // - a key light that casts shadows, so the gaps and the hollows under the
+  //   rounded corners go dark. It rides with the camera (up and to the right
+  //   of the viewer), so the faces you look at are always lit the same way.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+  scene.environment = envMap;
+  scene.environmentIntensity = 0.55;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x6f6a60, 0.5));
+
+  const key = new THREE.DirectionalLight(0xffffff, 2.4);
+  key.position.set(3, 5, 1); // relative to the camera
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -2.4;
+  key.shadow.camera.right = 2.4;
+  key.shadow.camera.top = 2.4;
+  key.shadow.camera.bottom = -2.4;
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 30;
+  key.shadow.radius = 4;
+  key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.015;
+  camera.add(key);
+  scene.add(camera);
+  scene.add(key.target); // aims at the origin
 
   // 27 cubies: an ivory core with a glossy colored slab for each sticker.
   const body = new RoundedBoxGeometry(CORE_SIZE, CORE_SIZE, CORE_SIZE, 3, 0.04);
@@ -163,7 +189,10 @@ function createScene(container: HTMLDivElement): Scene {
       for (let z = -1; z <= 1; z++) {
         const g = new THREE.Group();
         g.position.set(x, y, z);
-        g.add(new THREE.Mesh(body, bodyMat));
+        const core = new THREE.Mesh(body, bodyMat);
+        core.castShadow = true;
+        core.receiveShadow = true;
+        g.add(core);
         scene.add(g);
         cubies.set(posKey([x, y, z]), g);
       }
@@ -204,6 +233,8 @@ function createScene(container: HTMLDivElement): Scene {
     });
 
     const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     // The slab spans z = -BEVEL to SLAB_DEPTH - BEVEL; put its front on the piece's face.
     mesh.position.copy(n.clone().multiplyScalar(PIECE_SIZE / 2 - (SLAB_DEPTH - BEVEL)));
     mesh.quaternion.copy(rotation);
@@ -296,6 +327,7 @@ function createScene(container: HTMLDivElement): Scene {
       bodyMat.dispose();
       tileGeos.forEach((g) => g.dispose());
       stickerMats.forEach((m) => m.dispose());
+      envMap.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },
