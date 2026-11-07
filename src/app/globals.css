@@ -18,7 +18,7 @@
   --color-muted: #77736a;
   --color-line: #e2ded4;
   --color-accent: #1e6fe0;
-  --color-mark: #ff7612;
+  --color-mark: #1f9e47;
 
   --font-sans: system-ui, -apple-system, "Hiragino Sans", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -33,7 +33,7 @@
       --color-muted: #a8a397;
       --color-line: #3a3832;
       --color-accent: #4b8ef0;
-      --color-mark: #ff8a33;
+      --color-mark: #3ccf63;
     }
   }
 
