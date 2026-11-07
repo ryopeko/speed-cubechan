@@ -11,16 +11,34 @@ export const BACKGROUNDS = {
 } as const;
 
 export type BackgroundId = keyof typeof BACKGROUNDS;
-export type CubeBackground = { bg: BackgroundId; grid: boolean };
 
+/** Range of the light and contrast sliders. */
+export const LIGHT_RANGE = { min: 0.5, max: 5, step: 0.1 };
+export const CONTRAST_RANGE = { min: 0, max: 1, step: 0.05 };
+
+/** How the 3D cube is shown. Shared by every cube view and saved in localStorage. */
+export type CubePrefs = {
+  bg: BackgroundId;
+  grid: boolean;
+  /** Intensity of the front key light. */
+  light: number;
+  /** 0 = flat (bright shadows) … 1 = strong (dark shadows). 0.5 is the default look. */
+  contrast: number;
+};
+
+export const DEFAULT_PREFS: CubePrefs = { bg: "greige", grid: false, light: 2.5, contrast: 0.5 };
+
+// Kept from when this only stored the background, so a saved choice survives.
 const KEY = "speed-cubechan:cube-background";
-const DEFAULT: CubeBackground = { bg: "greige", grid: false };
 const listeners = new Set<() => void>();
 
 let cachedRaw: string | null | undefined;
-let cached: CubeBackground = DEFAULT;
+let cached: CubePrefs = DEFAULT_PREFS;
 
-function read(): CubeBackground {
+const inRange = (v: unknown, { min, max }: { min: number; max: number }) =>
+  typeof v === "number" && v >= min && v <= max;
+
+function read(): CubePrefs {
   let raw: string | null = null;
   try {
     raw = localStorage.getItem(KEY);
@@ -32,11 +50,13 @@ function read(): CubeBackground {
     try {
       const v = raw ? JSON.parse(raw) : {};
       cached = {
-        bg: v.bg in BACKGROUNDS ? v.bg : DEFAULT.bg,
-        grid: typeof v.grid === "boolean" ? v.grid : DEFAULT.grid,
+        bg: v.bg in BACKGROUNDS ? v.bg : DEFAULT_PREFS.bg,
+        grid: typeof v.grid === "boolean" ? v.grid : DEFAULT_PREFS.grid,
+        light: inRange(v.light, LIGHT_RANGE) ? v.light : DEFAULT_PREFS.light,
+        contrast: inRange(v.contrast, CONTRAST_RANGE) ? v.contrast : DEFAULT_PREFS.contrast,
       };
     } catch {
-      cached = DEFAULT;
+      cached = DEFAULT_PREFS;
     }
   }
   return cached;
@@ -54,10 +74,9 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** The chosen cube background, saved in localStorage and shared by every cube view. */
-export function useCubeBackground() {
-  const value = useSyncExternalStore(subscribe, read, () => DEFAULT);
-  const update = useCallback((patch: Partial<CubeBackground>) => {
+export function useCubePrefs() {
+  const value = useSyncExternalStore(subscribe, read, () => DEFAULT_PREFS);
+  const update = useCallback((patch: Partial<CubePrefs>) => {
     const next = { ...read(), ...patch };
     try {
       localStorage.setItem(KEY, JSON.stringify(next));
@@ -71,6 +90,6 @@ export function useCubeBackground() {
 }
 
 /** Inline style for the box behind the cube. (The grid is drawn in 3D by the cube view.) */
-export function backgroundStyle({ bg }: CubeBackground): React.CSSProperties {
+export function backgroundStyle({ bg }: CubePrefs): React.CSSProperties {
   return { backgroundColor: BACKGROUNDS[bg].color };
 }

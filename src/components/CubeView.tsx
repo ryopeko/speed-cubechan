@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import BackgroundPicker from "./BackgroundPicker";
+import CubeSettings from "./CubeSettings";
 import { CUBE_BOX } from "./cubeBox";
-import { BACKGROUNDS, backgroundStyle, useCubeBackground } from "@/lib/cubeBackground";
+import { BACKGROUNDS, backgroundStyle, useCubePrefs } from "@/lib/cubePrefs";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -94,6 +94,8 @@ type Scene = {
   cancelAnimation: () => void;
   /** Show or hide the floor grid (and the cube's shadow on it). */
   setFloor: (visible: boolean, lineColor: string) => void;
+  /** Key light intensity, and contrast 0…1 (higher = less ambient light, darker shadows). */
+  setLighting: (light: number, contrast: number) => void;
   dispose: () => void;
 };
 
@@ -149,8 +151,11 @@ function createScene(container: HTMLDivElement): Scene {
   const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   pmrem.dispose();
   scene.environment = envMap;
-  scene.environmentIntensity = 0.22;
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x6f6a60, 0.18));
+  const ENV_INTENSITY = 0.22;
+  const SKY_INTENSITY = 0.18;
+  scene.environmentIntensity = ENV_INTENSITY;
+  const sky = new THREE.HemisphereLight(0xffffff, 0x6f6a60, SKY_INTENSITY);
+  scene.add(sky);
 
   const key = new THREE.DirectionalLight(0xffffff, 2.5);
   key.position.set(0.8, 1.6, 0); // relative to the camera: nearly head-on, a bit above
@@ -370,6 +375,13 @@ function createScene(container: HTMLDivElement): Scene {
         onDone,
       };
     },
+    setLighting(light, contrast) {
+      key.intensity = light;
+      // Contrast scales the ambient light: 0.5 → ×1, 0 → ×4, 1 → ×0.25.
+      const ambient = 2 ** ((0.5 - contrast) * 4);
+      scene.environmentIntensity = ENV_INTENSITY * ambient;
+      sky.intensity = SKY_INTENSITY * ambient;
+    },
     setFloor(visible, lineColor) {
       floor.visible = visible;
       gridMat.uniforms.uColor.value.set(lineColor);
@@ -409,7 +421,7 @@ export default function CubeView({
   useEffect(() => {
     quarterTurnMsRef.current = quarterTurnMs;
   }, [quarterTurnMs]);
-  const [background] = useCubeBackground();
+  const [prefs] = useCubePrefs();
   // What the scene currently shows (or will show once the running turn ends).
   const shownRef = useRef<{ start: CubeState; moves: readonly Move[]; position: number } | null>(
     null,
@@ -426,9 +438,11 @@ export default function CubeView({
   }, []);
 
   useEffect(() => {
-    const dark = BACKGROUNDS[background.bg].dark;
-    sceneRef.current?.setFloor(background.grid, dark ? "#ffffff" : "#000000");
-  }, [background]);
+    const scene = sceneRef.current;
+    if (!scene) return;
+    scene.setFloor(prefs.grid, BACKGROUNDS[prefs.bg].dark ? "#ffffff" : "#000000");
+    scene.setLighting(prefs.light, prefs.contrast);
+  }, [prefs]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -451,12 +465,12 @@ export default function CubeView({
   }, [start, moves, position]);
 
   return (
-    <div className={CUBE_BOX} style={backgroundStyle(background)}>
+    <div className={CUBE_BOX} style={backgroundStyle(prefs)}>
       <div
         ref={containerRef}
         className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
       />
-      <BackgroundPicker />
+      <CubeSettings />
     </div>
   );
 }
