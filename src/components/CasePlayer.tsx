@@ -1,12 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Cube from "./Cube";
 import Tabs from "./Tabs";
-import { applyMoves, formatMove, invertMoves, parseAlg, SOLVED } from "@/lib/cube";
+import { applyMoves, formatMove, invertMoves, parseAlg, SOLVED, type Move } from "@/lib/cube";
 import type { Pattern } from "@/data/patterns";
 
 type Mode = "alg" | "setup";
+type Speed = "slow" | "normal" | "fast";
+
+/** Quarter-turn time and the pause after each move, in ms. */
+const SPEEDS: Record<Speed, { label: string; turn: number; pause: number }> = {
+  slow: { label: "ゆっくり", turn: 700, pause: 900 },
+  normal: { label: "ふつう", turn: 300, pause: 500 },
+  fast: { label: "はやい", turn: 180, pause: 150 },
+};
+
+const turnTime = (move: Move, turn: number) => turn * (move.amount === 2 ? 2 : 1);
 
 /**
  * Shows one case in 3D with its algorithm and setup.
@@ -27,14 +37,47 @@ export default function CasePlayer({
 
   const [mode, setMode] = useState<Mode>("alg");
   const [position, setPosition] = useState(0);
+  const [speed, setSpeed] = useState<Speed>("slow");
+  const [playing, setPlaying] = useState(false);
+  /** Where playback started; the first move there plays without waiting. */
+  const [playFrom, setPlayFrom] = useState(0);
 
   const start = mode === "alg" ? caseState : SOLVED;
   const moves = mode === "alg" ? algMoves : setupMoves;
   const done = position >= moves.length;
+  const isPlaying = playing && !done;
+
+  // Auto play: after each move finishes turning, pause, then make the next one.
+  useEffect(() => {
+    if (!isPlaying) return;
+    const { turn, pause } = SPEEDS[speed];
+    const delay = position === playFrom ? 200 : turnTime(moves[position - 1], turn) + pause;
+    const timer = setTimeout(() => setPosition((p) => p + 1), delay);
+    return () => clearTimeout(timer);
+  }, [isPlaying, position, playFrom, moves, speed]);
+
+  /** Any manual control stops playback first. */
+  const go = (to: number) => {
+    setPlaying(false);
+    setPosition(Math.max(0, Math.min(moves.length, to)));
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) return setPlaying(false);
+    const from = done ? 0 : position;
+    setPosition(from);
+    setPlayFrom(from);
+    setPlaying(true);
+  };
 
   return (
     <div className="flex flex-col gap-3">
-      <Cube start={start} moves={moves} position={showAnswer ? position : 0} />
+      <Cube
+        start={start}
+        moves={moves}
+        position={showAnswer ? position : 0}
+        quarterTurnMs={SPEEDS[speed].turn}
+      />
 
       {showAnswer && (
         <>
@@ -46,7 +89,7 @@ export default function CasePlayer({
             value={mode}
             onChange={(m) => {
               setMode(m);
-              setPosition(0);
+              go(0);
             }}
           />
 
@@ -77,23 +120,34 @@ export default function CasePlayer({
           </ol>
 
           <div className="flex flex-wrap gap-2">
-            <button className="btn" onClick={() => setPosition(0)} disabled={position === 0}>
+            <button className="btn" onClick={() => go(0)} disabled={position === 0}>
               ⏮ 最初に戻す
             </button>
             <button
               className="btn"
-              onClick={() => setPosition((p) => Math.max(0, p - 1))}
+              onClick={() => go(position - 1)}
               disabled={position === 0}
             >
               ◀ 1 手戻す
             </button>
             <button
               className="btn-primary"
-              onClick={() => setPosition((p) => Math.min(moves.length, p + 1))}
+              onClick={() => go(position + 1)}
               disabled={done}
             >
               {done ? "おわり" : `${formatMove(moves[position])} を回す ▶`}
             </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="btn min-w-[9em]" onClick={togglePlay}>
+              {isPlaying ? "⏸ 止める" : done ? "↺ もう一度再生" : "▶ 自動で再生"}
+            </button>
+            <span className="ml-2 text-sm text-muted">速さ</span>
+            <Tabs
+              options={(Object.keys(SPEEDS) as Speed[]).map((k) => [k, SPEEDS[k].label] as const)}
+              value={speed}
+              onChange={setSpeed}
+            />
           </div>
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted">
             <span>

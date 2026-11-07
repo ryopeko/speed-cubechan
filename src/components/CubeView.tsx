@@ -20,6 +20,8 @@ export type CubeViewProps = {
   moves: readonly Move[];
   /** How many of `moves` are applied. Going up by one animates that move. */
   position: number;
+  /** Time for a quarter turn, in ms. A half turn (U2) takes twice as long. */
+  quarterTurnMs?: number;
 };
 
 // Stickerless cube colors (match --color-cube-* in globals.css).
@@ -34,13 +36,13 @@ const COLORS: Record<Face, number> = {
 /** The ivory plastic that shows in the gaps between tiles. */
 const BODY_COLOR = 0xd9d4c8;
 
-/** Time for a quarter turn. A half turn (U2) takes twice as long, so it turns at the same speed. */
-const QUARTER_TURN_MS = 300;
+/** Default time for a quarter turn. */
+export const QUARTER_TURN_MS = 300;
 const posKey = (p: Vec3) => p.join(",");
 
 type Scene = {
   setState: (state: CubeState) => void;
-  animate: (move: Move, onDone: () => void) => void;
+  animate: (move: Move, quarterTurnMs: number, onDone: () => void) => void;
   cancelAnimation: () => void;
   dispose: () => void;
 };
@@ -174,7 +176,7 @@ function createScene(container: HTMLDivElement): Scene {
     setState(state) {
       state.forEach((c, i) => stickerMats[i].color.setHex(COLORS[c]));
     },
-    animate(move, onDone) {
+    animate(move, quarterTurnMs, onDone) {
       const { axis, inLayer } = moveLayer(move.name);
       for (const [k, g] of cubies) {
         if (inLayer(k.split(",").map(Number) as unknown as Vec3)) pivot.attach(g);
@@ -184,7 +186,7 @@ function createScene(container: HTMLDivElement): Scene {
         axis: new THREE.Vector3(...axis),
         angle: (quarter * Math.PI) / 2,
         t0: performance.now(),
-        duration: QUARTER_TURN_MS * Math.abs(quarter),
+        duration: quarterTurnMs * Math.abs(quarter),
         onDone,
       };
     },
@@ -206,9 +208,19 @@ function createScene(container: HTMLDivElement): Scene {
   };
 }
 
-export default function CubeView({ start, moves, position }: CubeViewProps) {
+export default function CubeView({
+  start,
+  moves,
+  position,
+  quarterTurnMs = QUARTER_TURN_MS,
+}: CubeViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene | null>(null);
+  // Read through a ref, so changing the speed doesn't restart the running turn.
+  const quarterTurnMsRef = useRef(quarterTurnMs);
+  useEffect(() => {
+    quarterTurnMsRef.current = quarterTurnMs;
+  }, [quarterTurnMs]);
   // What the scene currently shows (or will show once the running turn ends).
   const shownRef = useRef<{ start: CubeState; moves: readonly Move[]; position: number } | null>(
     null,
@@ -236,7 +248,7 @@ export default function CubeView({ start, moves, position }: CubeViewProps) {
     if (stepForward) {
       const before = applyMoves(start, moves.slice(0, prev.position));
       scene.setState(before);
-      scene.animate(moves[prev.position], () =>
+      scene.animate(moves[prev.position], quarterTurnMsRef.current, () =>
         scene.setState(applyMoves(start, moves.slice(0, position))),
       );
     } else {
