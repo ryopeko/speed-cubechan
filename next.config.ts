@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   basePath,
   trailingSlash: true,
   images: { unoptimized: true },
+  // Hide the "N" route indicator in dev; errors still show.
+  devIndicators: false,
   // cacheComponents / partialPrefetching rely on PPR, which static export
   // does not support.
 };
