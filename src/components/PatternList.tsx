@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import MarkButton from "./MarkButton";
-import Tabs from "./Tabs";
+import Segmented from "./Segmented";
 import { useMarks } from "@/lib/marks";
-import { OLL_PATTERNS, PLL_PATTERNS, type Pattern } from "@/data/patterns";
+import { OLL_PATTERNS, PATTERNS, PLL_PATTERNS, type Pattern } from "@/data/patterns";
 
 type Filter = "all" | "marked" | "unmarked";
 
@@ -20,14 +20,16 @@ export default function PatternList() {
 
   const visible = (list: readonly Pattern[]) =>
     list.filter((p) => filter === "all" || (filter === "marked") === isMarked(p.id));
+  const markedCount = PATTERNS.filter((p) => isMarked(p.id)).length;
 
   return (
     <>
-      <Tabs
+      <Segmented
+        label="表示するパターン"
         options={[
-          ["all", "すべて"],
-          ["marked", "覚えた"],
-          ["unmarked", "未"],
+          { value: "all", label: "すべて", count: PATTERNS.length },
+          { value: "marked", label: "覚えた", count: markedCount },
+          { value: "unmarked", label: "まだ", count: PATTERNS.length - markedCount },
         ]}
         value={filter}
         onChange={setFilter}
