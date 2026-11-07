@@ -1,273 +1,60 @@
-:root {
-  --bg: #f6f6f4;
-  --surface: #ffffff;
-  --text: #1d1d1f;
-  --muted: #6b6b70;
-  --border: #dedede;
-  --accent: #2563eb;
-  --accent-text: #ffffff;
-  --mark: #d97706;
+@import "tailwindcss";
+
+/*
+ * Colors follow the stickerless cube: ivory plastic with vivid faces.
+ * The cube-* colors are the faces; the rest is the page palette.
+ */
+@theme {
+  --color-cube-white: #efece4;
+  --color-cube-yellow: #f3ec18;
+  --color-cube-green: #22cf4b;
+  --color-cube-orange: #ff7612;
+  --color-cube-red: #d6122d;
+  --color-cube-blue: #1e6fe0;
+
+  --color-bg: #f5f3ee;
+  --color-surface: #fffefb;
+  --color-ink: #23211d;
+  --color-muted: #77736a;
+  --color-line: #e2ded4;
+  --color-accent: #1e6fe0;
+  --color-mark: #ff7612;
+
+  --font-sans: system-ui, -apple-system, "Hiragino Sans", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #18181b;
-    --surface: #232327;
-    --text: #ececef;
-    --muted: #a1a1aa;
-    --border: #3a3a40;
-    --accent: #3b82f6;
-    --mark: #fbbf24;
+@layer base {
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1a1916;
+      --color-surface: #24231f;
+      --color-ink: #efece4;
+      --color-muted: #a8a397;
+      --color-line: #3a3832;
+      --color-accent: #4b8ef0;
+      --color-mark: #ff8a33;
+    }
+  }
+
+  body {
+    @apply bg-bg font-sans text-ink;
+  }
+
+  a {
+    @apply text-accent;
   }
 }
 
-* {
-  box-sizing: border-box;
+/* Shared buttons. Defined as utilities so they can be composed with @apply. */
+@utility btn {
+  @apply cursor-pointer rounded-lg border border-line bg-surface px-3.5 py-1.5 text-ink transition-colors hover:border-muted disabled:cursor-default disabled:opacity-40 disabled:hover:border-line;
 }
 
-html,
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, "Hiragino Sans", sans-serif;
-  line-height: 1.6;
+@utility btn-primary {
+  @apply cursor-pointer rounded-lg border border-accent bg-accent px-3.5 py-1.5 font-semibold text-white transition hover:brightness-110 disabled:cursor-default disabled:opacity-40 disabled:hover:brightness-100;
 }
 
-a {
-  color: var(--accent);
-}
-
-code {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-}
-
-button {
-  font: inherit;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 14px;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
-}
-
-.site-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.site-header .logo {
-  font-weight: 700;
-  color: var(--text);
-  text-decoration: none;
-}
-
-.site-header nav {
-  display: flex;
-  gap: 16px;
-}
-
-main {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 16px 16px 48px;
-}
-
-h1 {
-  font-size: 1.5rem;
-  margin: 8px 0 16px;
-}
-
-h2 {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-size: 1.2rem;
-  margin: 24px 0 8px;
-}
-
-.count {
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: var(--muted);
-}
-
-.empty,
-.hint,
-.progress {
-  color: var(--muted);
-}
-
-.tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.tabs button[aria-selected="true"] {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
-}
-
-.pattern-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-}
-
-.pattern-list li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-}
-
-.pattern-list li + li {
-  border-top: 1px solid var(--border);
-}
-
-.pattern-list a {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 12px;
-  text-decoration: none;
-  color: var(--text);
-}
-
-.pattern-list .name {
-  font-weight: 600;
-  min-width: 6.5em;
-}
-
-.pattern-list code {
-  color: var(--muted);
-  font-size: 0.85rem;
-  overflow-wrap: anywhere;
-}
-
-.mark {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.mark.marked {
-  color: var(--mark);
-  border-color: var(--mark);
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.player {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cube-view {
-  width: 100%;
-  height: min(70vw, 380px);
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  touch-action: none;
-  cursor: grab;
-}
-
-.moves {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.moves li {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  min-width: 2.4em;
-  text-align: center;
-}
-
-.moves li.done {
-  opacity: 0.4;
-}
-
-.moves li.next {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-  font-weight: 700;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.progress {
-  margin: 0;
-}
-
-.algs {
-  margin: 0;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.algs dt {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.algs dd {
-  margin: 0 0 8px;
-  overflow-wrap: anywhere;
-}
-
-.pager {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
-}
-
-.practice-start {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 16px;
+@utility tab {
+  @apply btn aria-selected:border-ink aria-selected:bg-ink aria-selected:text-bg;
 }

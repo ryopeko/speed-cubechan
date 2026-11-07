@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import CasePlayer from "./CasePlayer";
 import MarkButton from "./MarkButton";
+import Tabs from "./Tabs";
 import { useMarks } from "@/lib/marks";
 import { findPattern, type Pattern, type PatternKind } from "@/data/patterns";
 
@@ -35,39 +36,36 @@ export default function Practice() {
 
   return (
     <>
-      <div className="tabs" role="tablist">
-        {(["all", "OLL", "PLL"] as const).map((k) => (
-          <button
-            key={k}
-            role="tab"
-            aria-selected={kind === k}
-            onClick={() => {
-              setKind(k);
-              setCurrent(undefined);
-            }}
-          >
-            {k === "all" ? "すべて" : k}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        options={[
+          ["all", "すべて"],
+          ["OLL", "OLL"],
+          ["PLL", "PLL"],
+        ]}
+        value={kind}
+        onChange={(k) => {
+          setKind(k);
+          setCurrent(undefined);
+        }}
+      />
 
       {pool.length === 0 ? (
-        <p className="empty">
+        <p className="mt-4 text-muted">
           覚えたパターンがありません。<Link href="/">一覧</Link>で「覚えた」を付けてください。
         </p>
       ) : !current ? (
-        <div className="practice-start">
+        <div className="mt-4 flex flex-col items-start gap-2">
           <p>覚えた {pool.length} 個の中から、ランダムに 1 つ出します。</p>
-          <button className="primary" onClick={next}>
+          <button className="btn-primary" onClick={next}>
             はじめる
           </button>
         </div>
       ) : (
         <>
-          <p className="hint">
+          <p className="my-3 text-muted">
             {revealed ? (
               <>
-                <strong>{current.name}</strong>{" "}
+                <strong className="text-ink">{current.name}</strong>{" "}
                 <Link href={`/patterns/${current.id}`}>詳細</Link>
               </>
             ) : (
@@ -75,16 +73,16 @@ export default function Practice() {
             )}
           </p>
           <CasePlayer key={`${current.id}-${round}`} pattern={current} showAnswer={revealed} />
-          <div className="controls">
+          <div className="mt-3 flex flex-wrap gap-2">
             {revealed ? (
               <>
                 <MarkButton id={current.id} />
-                <button className="primary" onClick={next}>
+                <button className="btn-primary" onClick={next}>
                   次へ ▶
                 </button>
               </>
             ) : (
-              <button className="primary" onClick={() => setRevealed(true)}>
+              <button className="btn-primary" onClick={() => setRevealed(true)}>
                 答えを見る
               </button>
             )}

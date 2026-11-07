@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { CUBE_BOX } from "./cubeBox";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
@@ -21,14 +22,17 @@ export type CubeViewProps = {
   position: number;
 };
 
+// Stickerless cube colors (match --color-cube-* in globals.css).
 const COLORS: Record<Face, number> = {
-  U: 0xffd500, // yellow
-  D: 0xffffff, // white
-  F: 0x009b48, // green
-  B: 0x0046ad, // blue
-  R: 0xff5800, // orange
-  L: 0xb71234, // red
+  U: 0xf3ec18, // yellow
+  D: 0xefece4, // ivory white
+  F: 0x22cf4b, // green
+  B: 0x1e6fe0, // blue
+  R: 0xff7612, // orange
+  L: 0xd6122d, // red
 };
+/** The ivory plastic that shows in the gaps between tiles. */
+const BODY_COLOR = 0xd9d4c8;
 
 const TURN_MS = 220;
 const posKey = (p: Vec3) => p.join(",");
@@ -40,9 +44,26 @@ type Scene = {
   dispose: () => void;
 };
 
+function roundedSquare(size: number, radius: number): THREE.Shape {
+  const h = size / 2;
+  const r = radius;
+  const shape = new THREE.Shape();
+  shape.moveTo(-h + r, -h);
+  shape.lineTo(h - r, -h);
+  shape.quadraticCurveTo(h, -h, h, -h + r);
+  shape.lineTo(h, h - r);
+  shape.quadraticCurveTo(h, h, h - r, h);
+  shape.lineTo(-h + r, h);
+  shape.quadraticCurveTo(-h, h, -h, h - r);
+  shape.lineTo(-h, -h + r);
+  shape.quadraticCurveTo(-h, -h, -h + r, -h);
+  return shape;
+}
+
 function createScene(container: HTMLDivElement): Scene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -55,10 +76,18 @@ function createScene(container: HTMLDivElement): Scene {
   controls.enableZoom = false;
   controls.enableDamping = true;
 
-  // 27 cubies: a dark body, with sticker planes for each sticker on it.
-  const body = new THREE.BoxGeometry(0.96, 0.96, 0.96);
-  const bodyMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const stickerGeo = new THREE.PlaneGeometry(0.84, 0.84);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8478, 2.2));
+  const key = new THREE.DirectionalLight(0xffffff, 1.6);
+  key.position.set(3, 6, 4);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+  fill.position.set(-4, -2, -3);
+  scene.add(fill);
+
+  // 27 cubies: an ivory body with a rounded, glossy tile for each sticker on it.
+  const body = new THREE.BoxGeometry(0.97, 0.97, 0.97);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR, roughness: 0.6 });
+  const stickerGeo = new THREE.ShapeGeometry(roundedSquare(0.9, 0.14), 6);
   const cubies = new Map<string, THREE.Group>();
   for (let x = -1; x <= 1; x++)
     for (let y = -1; y <= 1; y++)
@@ -71,11 +100,16 @@ function createScene(container: HTMLDivElement): Scene {
       }
 
   const stickerMats = STICKERS.map((s) => {
-    const mat = new THREE.MeshBasicMaterial({ color: COLORS[s.face], side: THREE.DoubleSide });
+    const mat = new THREE.MeshStandardMaterial({
+      color: COLORS[s.face],
+      roughness: 0.32,
+      side: THREE.DoubleSide,
+    });
     const mesh = new THREE.Mesh(stickerGeo, mat);
     const n = new THREE.Vector3(...s.normal);
-    mesh.position.copy(n.clone().multiplyScalar(0.485));
-    mesh.lookAt(n.clone().multiplyScalar(2));
+    // Sit just above the body's face (0.485), facing outward.
+    mesh.position.copy(n.clone().multiplyScalar(0.488));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
     cubies.get(posKey(s.pos))!.add(mesh);
     return mat;
   });
@@ -201,5 +235,5 @@ export default function CubeView({ start, moves, position }: CubeViewProps) {
     }
   }, [start, moves, position]);
 
-  return <div ref={containerRef} className="cube-view" />;
+  return <div ref={containerRef} className={CUBE_BOX} />;
 }

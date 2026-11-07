@@ -7,7 +7,7 @@ export default function MarkButton({ id }: { id: string }) {
   const marked = isMarked(id);
   return (
     <button
-      className={marked ? "mark marked" : "mark"}
+      className={`btn shrink-0 whitespace-nowrap ${marked ? "border-mark! font-semibold text-mark!" : "text-muted"}`}
       aria-pressed={marked}
       onClick={() => toggle(id)}
     >

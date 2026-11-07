@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Cube from "./Cube";
+import Tabs from "./Tabs";
 import { applyMoves, formatMove, invertMoves, parseAlg, SOLVED } from "@/lib/cube";
 import type { Pattern } from "@/data/patterns";
 
@@ -31,71 +32,76 @@ export default function CasePlayer({
   const moves = mode === "alg" ? algMoves : setupMoves;
   const done = position >= moves.length;
 
-  const switchMode = (m: Mode) => {
-    setMode(m);
-    setPosition(0);
-  };
-
   return (
-    <div className="player">
+    <div className="flex flex-col gap-3">
       <Cube start={start} moves={moves} position={showAnswer ? position : 0} />
 
       {showAnswer && (
         <>
-          <div className="tabs" role="tablist">
-            <button role="tab" aria-selected={mode === "alg"} onClick={() => switchMode("alg")}>
-              (a) アルゴリズム
-            </button>
-            <button role="tab" aria-selected={mode === "setup"} onClick={() => switchMode("setup")}>
-              (b) セットアップ
-            </button>
-          </div>
+          <Tabs
+            options={[
+              ["alg", "(a) アルゴリズム"],
+              ["setup", "(b) セットアップ"],
+            ]}
+            value={mode}
+            onChange={(m) => {
+              setMode(m);
+              setPosition(0);
+            }}
+          />
 
-          <p className="hint">
+          <p className="text-muted">
             {mode === "alg"
               ? "この形から、アルゴリズムで揃えます。"
               : "揃った状態から、セットアップでこの形を作ります。"}
           </p>
 
-          <ol className="moves" aria-label="手順">
+          <ol className="flex flex-wrap gap-1.5" aria-label="手順">
             {moves.map((m, i) => (
               <li
                 key={i}
-                className={i < position ? "done" : i === position ? "next" : undefined}
+                className={`min-w-[2.4em] rounded-md border bg-surface px-2 py-0.5 text-center font-mono ${
+                  i < position
+                    ? "border-line opacity-40"
+                    : i === position
+                      ? "border-accent font-bold ring-1 ring-accent"
+                      : "border-line"
+                }`}
               >
                 {formatMove(m)}
               </li>
             ))}
           </ol>
 
-          <div className="controls">
-            <button onClick={() => setPosition(0)} disabled={position === 0}>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn" onClick={() => setPosition(0)} disabled={position === 0}>
               ⏮ 最初に戻す
             </button>
-            <button onClick={() => setPosition((p) => Math.max(0, p - 1))} disabled={position === 0}>
+            <button
+              className="btn"
+              onClick={() => setPosition((p) => Math.max(0, p - 1))}
+              disabled={position === 0}
+            >
               ◀ 1 手戻す
             </button>
             <button
-              className="primary"
+              className="btn-primary"
               onClick={() => setPosition((p) => Math.min(moves.length, p + 1))}
               disabled={done}
             >
               1 手進める ▶
             </button>
           </div>
-          <p className="progress">
-            {position} / {moves.length} 手{done && (mode === "alg" ? " ・ 揃いました" : " ・ 形ができました")}
+          <p className="text-muted">
+            {position} / {moves.length} 手
+            {done && (mode === "alg" ? " ・ 揃いました" : " ・ 形ができました")}
           </p>
 
-          <dl className="algs">
-            <dt>アルゴリズム</dt>
-            <dd>
-              <code>{pattern.alg}</code>
-            </dd>
-            <dt>セットアップ</dt>
-            <dd>
-              <code>{setupMoves.map(formatMove).join(" ")}</code>
-            </dd>
+          <dl className="rounded-xl border border-line bg-surface p-3">
+            <dt className="text-sm text-muted">アルゴリズム</dt>
+            <dd className="mb-2 font-mono wrap-anywhere">{pattern.alg}</dd>
+            <dt className="text-sm text-muted">セットアップ</dt>
+            <dd className="font-mono wrap-anywhere">{setupMoves.map(formatMove).join(" ")}</dd>
           </dl>
         </>
       )}
