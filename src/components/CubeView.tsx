@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import BackgroundPicker from "./BackgroundPicker";
 import { CUBE_BOX } from "./cubeBox";
+import { backgroundStyle, useCubeBackground } from "@/lib/cubeBackground";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -385,5 +387,15 @@ export default function CubeView({
     }
   }, [start, moves, position]);
 
-  return <div ref={containerRef} className={CUBE_BOX} />;
+  const [background] = useCubeBackground();
+
+  return (
+    <div className={CUBE_BOX} style={backgroundStyle(background)}>
+      <div
+        ref={containerRef}
+        className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
+      />
+      <BackgroundPicker />
+    </div>
+  );
 }
