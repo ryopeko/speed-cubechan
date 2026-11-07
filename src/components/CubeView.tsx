@@ -49,6 +49,13 @@ const CORE_SIZE = 0.8;
 const BEVEL = 0.014;
 /** Slab outline before the bevel is added around it. */
 const SLAB_OUTLINE = PIECE_SIZE - 2 * BEVEL;
+/**
+ * How far a slab pulls back from the cube's outer edges. Two slabs of one piece
+ * meet there; without this, one slab's side lies in the same plane as the other
+ * slab's front and the two colors flicker (z-fighting). Pulled back, each side
+ * hides inside the other slab, and the edge looks rounded. Must exceed BEVEL.
+ */
+const EDGE_INSET = 0.022;
 
 /**
  * Slab corner radii. Only the middle of the face is rounded: the center piece
@@ -87,19 +94,20 @@ type Scene = {
 
 /** Corner radii keyed by the corner's signs in tile-local x and y. */
 type CornerRadii = { pp: number; np: number; nn: number; pn: number };
+/** Slab outline extents in tile-local x and y. */
+type Bounds = { x0: number; x1: number; y0: number; y1: number };
 
-function roundedRect(size: number, r: CornerRadii): THREE.Shape {
-  const h = size / 2;
+function roundedRect({ x0, x1, y0, y1 }: Bounds, r: CornerRadii): THREE.Shape {
   const shape = new THREE.Shape();
-  shape.moveTo(-h + r.nn, -h);
-  shape.lineTo(h - r.pn, -h);
-  shape.absarc(h - r.pn, -h + r.pn, r.pn, -Math.PI / 2, 0, false);
-  shape.lineTo(h, h - r.pp);
-  shape.absarc(h - r.pp, h - r.pp, r.pp, 0, Math.PI / 2, false);
-  shape.lineTo(-h + r.np, h);
-  shape.absarc(-h + r.np, h - r.np, r.np, Math.PI / 2, Math.PI, false);
-  shape.lineTo(-h, -h + r.nn);
-  shape.absarc(-h + r.nn, -h + r.nn, r.nn, Math.PI, (Math.PI * 3) / 2, false);
+  shape.moveTo(x0 + r.nn, y0);
+  shape.lineTo(x1 - r.pn, y0);
+  shape.absarc(x1 - r.pn, y0 + r.pn, r.pn, -Math.PI / 2, 0, false);
+  shape.lineTo(x1, y1 - r.pp);
+  shape.absarc(x1 - r.pp, y1 - r.pp, r.pp, 0, Math.PI / 2, false);
+  shape.lineTo(x0 + r.np, y1);
+  shape.absarc(x0 + r.np, y1 - r.np, r.np, Math.PI / 2, Math.PI, false);
+  shape.lineTo(x0, y0 + r.nn);
+  shape.absarc(x0 + r.nn, y0 + r.nn, r.nn, Math.PI, (Math.PI * 3) / 2, false);
   return shape;
 }
 
@@ -131,13 +139,13 @@ function createScene(container: HTMLDivElement): Scene {
   // 27 cubies: an ivory core with a glossy colored slab for each sticker.
   const body = new RoundedBoxGeometry(CORE_SIZE, CORE_SIZE, CORE_SIZE, 3, 0.04);
   const bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR, roughness: 0.6 });
-  // Slabs differ only by their corner radii, so geometries are shared by those.
+  // Slabs differ only by their outline, so geometries are shared by that.
   const tileGeos = new Map<string, THREE.ExtrudeGeometry>();
-  const tileGeo = (r: CornerRadii) => {
-    const k = `${r.pp},${r.np},${r.nn},${r.pn}`;
+  const tileGeo = (b: Bounds, r: CornerRadii) => {
+    const k = `${b.x0},${b.x1},${b.y0},${b.y1}|${r.pp},${r.np},${r.nn},${r.pn}`;
     let geo = tileGeos.get(k);
     if (!geo) {
-      geo = new THREE.ExtrudeGeometry(roundedRect(SLAB_OUTLINE, r), {
+      geo = new THREE.ExtrudeGeometry(roundedRect(b, r), {
         depth: SLAB_DEPTH - 2 * BEVEL,
         bevelEnabled: true,
         bevelThickness: BEVEL,
@@ -179,7 +187,16 @@ function createScene(container: HTMLDivElement): Scene {
         .addScaledVector(ey, sy * 0.5);
       return cornerRadius(offset.length(), corner.length());
     };
-    const geo = tileGeo({
+    // Pull back the sides that lie on the cube's outer edges.
+    const h = SLAB_OUTLINE / 2;
+    const isOuter = (axis: THREE.Vector3, sign: number) => offset.dot(axis) * sign > 0.5;
+    const bounds: Bounds = {
+      x0: -h + (isOuter(ex, -1) ? EDGE_INSET : 0),
+      x1: h - (isOuter(ex, 1) ? EDGE_INSET : 0),
+      y0: -h + (isOuter(ey, -1) ? EDGE_INSET : 0),
+      y1: h - (isOuter(ey, 1) ? EDGE_INSET : 0),
+    };
+    const geo = tileGeo(bounds, {
       pp: radius(1, 1),
       np: radius(-1, 1),
       nn: radius(-1, -1),
