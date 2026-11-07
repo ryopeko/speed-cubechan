@@ -133,20 +133,23 @@ function createScene(container: HTMLDivElement): Scene {
   controls.enableZoom = false;
   controls.enableDamping = true;
 
-  // Lighting, modeled on a cube on a desk under room light:
-  // - a soft room environment, for glossy reflections like real plastic;
-  // - a key light that casts shadows, so the gaps and the hollows under the
-  //   rounded corners go dark. It rides with the camera (up and to the right
-  //   of the viewer), so the faces you look at are always lit the same way.
+  // Lighting:
+  // - a key light from the front, just above the viewer, that casts shadows.
+  //   Its light runs along the line of sight, so shadows fall back into the
+  //   gaps and the hollows under rounded corners. It rides with the camera,
+  //   so the faces you look at are always lit the same way;
+  // - a faint room environment and sky light, for glossy reflections and so
+  //   the shadowed parts aren't pitch black. Kept low so light doesn't seem
+  //   to come from everywhere.
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   pmrem.dispose();
   scene.environment = envMap;
-  scene.environmentIntensity = 0.55;
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x6f6a60, 0.5));
+  scene.environmentIntensity = 0.22;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x6f6a60, 0.18));
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.4);
-  key.position.set(3, 5, 1); // relative to the camera
+  const key = new THREE.DirectionalLight(0xffffff, 3.2);
+  key.position.set(0.8, 1.6, 0); // relative to the camera: nearly head-on, a bit above
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
   key.shadow.camera.left = -2.4;
