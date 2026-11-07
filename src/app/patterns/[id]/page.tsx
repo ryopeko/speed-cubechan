@@ -5,7 +5,9 @@ import CasePlayer from "@/components/CasePlayer";
 import { CUBE_BOX } from "@/components/cubeBox";
 import Main, { Title } from "@/components/Main";
 import MarkButton from "@/components/MarkButton";
+import QrCode from "@/components/QrCode";
 import { findPattern, PATTERNS } from "@/data/patterns";
+import { siteUrl } from "@/lib/site";
 
 export function generateStaticParams() {
   return PATTERNS.map((p) => ({ id: p.id }));
@@ -46,6 +48,16 @@ async function PatternDetail({ params }: { params: Promise<{ id: string }> }) {
         {prev ? <Link href={`/patterns/${prev.id}`}>← {prev.name}</Link> : <span />}
         {next ? <Link href={`/patterns/${next.id}`}>{next.name} →</Link> : <span />}
       </nav>
+      <section className="mt-8 flex items-center gap-4 rounded-xl border border-line bg-surface p-4">
+        <QrCode
+          value={siteUrl(`/patterns/${pattern.id}/`)}
+          label={`${pattern.name} のページの QR コード`}
+          className="size-28 shrink-0 rounded-md"
+        />
+        <p className="text-sm text-muted">
+          スマホのカメラで読み取ると、この {pattern.name} のページが開きます。
+        </p>
+      </section>
     </>
   );
 }
