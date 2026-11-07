@@ -56,5 +56,5 @@
 }
 
 @utility tab {
-  @apply btn aria-selected:border-ink aria-selected:bg-ink aria-selected:text-bg;
+  @apply btn aria-selected:border-accent aria-selected:bg-accent aria-selected:text-white;
 }

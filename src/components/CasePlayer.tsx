@@ -83,8 +83,8 @@ export default function CasePlayer({
         <>
           <Tabs
             options={[
-              ["alg", "(a) アルゴリズム"],
-              ["setup", "(b) セットアップ"],
+              ["alg", "アルゴリズム"],
+              ["setup", "セットアップ"],
             ]}
             value={mode}
             onChange={(m) => {
