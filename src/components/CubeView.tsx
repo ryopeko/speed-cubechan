@@ -34,29 +34,44 @@ const COLORS: Record<Face, number> = {
   R: 0xff7612, // orange
   L: 0xd6122d, // red
 };
-/** Cubie size (1 is the spacing, so 1 - CUBIE_SIZE is the gap) and its edge radius. */
-const CUBIE_SIZE = 0.99;
-const CUBIE_RADIUS = 0.06;
-/** Tile outline before the bevel (which adds 0.015 on each side). */
-const TILE_SIZE = 0.86;
-/**
- * Tile corner radii. Like a stickerless cube, corners get rounder toward the
- * middle of the face: the center tile is nearly a circle, and the corners of
- * the other tiles that touch it are rounded much more than the outer ones.
+/*
+ * Each cubie is built like a stickerless piece: every outward face is a thick
+ * colored slab whose outline is the piece's shape, and a smaller ivory core
+ * sits behind them. Where a slab's corner is rounded, you see down into the
+ * core instead of a flat plate behind a label.
  */
-const CENTER_TILE_RADIUS = 0.4;
-const INNER_CORNER_RADIUS = 0.26;
-const MIDDLE_CORNER_RADIUS = 0.1;
-const OUTER_CORNER_RADIUS = 0.06;
+/** Outer size of a piece (1 is the spacing, so 1 - PIECE_SIZE is the gap). */
+const PIECE_SIZE = 0.99;
+/** Thickness of a colored slab, and the size of the core behind the slabs. */
+const SLAB_DEPTH = 0.12;
+const CORE_SIZE = 0.8;
+/** Bevel on a slab's outline and front edge. */
+const BEVEL = 0.014;
+/** Slab outline before the bevel is added around it. */
+const SLAB_OUTLINE = PIECE_SIZE - 2 * BEVEL;
 
-/** Radius for a tile corner, by its distance from the face center (in cubie units). */
-function cornerRadius(distance: number, isCenterTile: boolean): number {
-  if (isCenterTile) return CENTER_TILE_RADIUS;
-  if (distance < 1) return INNER_CORNER_RADIUS; // ≈ 0.71: touches the center tile
-  if (distance < 2) return MIDDLE_CORNER_RADIUS; // ≈ 1.58
-  return OUTER_CORNER_RADIUS; // ≈ 2.12: the cube's corner
+/**
+ * Slab corner radii. Only the middle of the face is rounded: the center piece
+ * is nearly a circle, and the up/down/left/right edge pieces round the corners
+ * that face it. Corner pieces stay sharper, even on the corner facing the center.
+ */
+const CENTER_RADIUS = 0.42;
+const EDGE_INNER_RADIUS = 0.3;
+const CORNER_INNER_RADIUS = 0.1;
+const OUTER_RADIUS = 0.05;
+
+/**
+ * Radius for one corner of a slab.
+ * tileOffset: how far the tile is from the face center (0, 1 = edge, √2 = corner).
+ * cornerDistance: how far this corner of the tile is from the face center.
+ */
+function cornerRadius(tileOffset: number, cornerDistance: number): number {
+  if (tileOffset < 0.5) return CENTER_RADIUS;
+  if (cornerDistance > 1) return OUTER_RADIUS;
+  return tileOffset < 1.2 ? EDGE_INNER_RADIUS : CORNER_INNER_RADIUS;
 }
-/** The ivory plastic that shows in the gaps between tiles. */
+
+/** The ivory core plastic that shows in the gaps and under rounded corners. */
 const BODY_COLOR = 0xd9d4c8;
 
 /** Default time for a quarter turn. */
@@ -113,22 +128,20 @@ function createScene(container: HTMLDivElement): Scene {
   fill.position.set(-4, -2, -3);
   scene.add(fill);
 
-  // 27 cubies: an ivory body with a rounded, glossy tile for each sticker on it.
-  const body = new RoundedBoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE, 4, CUBIE_RADIUS);
+  // 27 cubies: an ivory core with a glossy colored slab for each sticker.
+  const body = new RoundedBoxGeometry(CORE_SIZE, CORE_SIZE, CORE_SIZE, 3, 0.04);
   const bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR, roughness: 0.6 });
-  // Each tile is a thin slab with beveled edges. Its back sinks into the body,
-  // so the rounded body corners never leave a gap under the tile.
-  // Tiles differ only by their corner radii, so geometries are shared by those.
+  // Slabs differ only by their corner radii, so geometries are shared by those.
   const tileGeos = new Map<string, THREE.ExtrudeGeometry>();
   const tileGeo = (r: CornerRadii) => {
     const k = `${r.pp},${r.np},${r.nn},${r.pn}`;
     let geo = tileGeos.get(k);
     if (!geo) {
-      geo = new THREE.ExtrudeGeometry(roundedRect(TILE_SIZE, r), {
-        depth: 0.012,
+      geo = new THREE.ExtrudeGeometry(roundedRect(SLAB_OUTLINE, r), {
+        depth: SLAB_DEPTH - 2 * BEVEL,
         bevelEnabled: true,
-        bevelThickness: 0.012,
-        bevelSize: 0.015,
+        bevelThickness: BEVEL,
+        bevelSize: BEVEL,
         bevelSegments: 4,
         curveSegments: 12,
       });
@@ -164,7 +177,7 @@ function createScene(container: HTMLDivElement): Scene {
         .clone()
         .addScaledVector(ex, sx * 0.5)
         .addScaledVector(ey, sy * 0.5);
-      return cornerRadius(corner.length(), offset.lengthSq() === 0);
+      return cornerRadius(offset.length(), corner.length());
     };
     const geo = tileGeo({
       pp: radius(1, 1),
@@ -174,8 +187,8 @@ function createScene(container: HTMLDivElement): Scene {
     });
 
     const mesh = new THREE.Mesh(geo, mat);
-    // The slab spans z = -0.012 to 0.024; put its front just above the body face.
-    mesh.position.copy(n.clone().multiplyScalar(CUBIE_SIZE / 2 + 0.004 - 0.024));
+    // The slab spans z = -BEVEL to SLAB_DEPTH - BEVEL; put its front on the piece's face.
+    mesh.position.copy(n.clone().multiplyScalar(PIECE_SIZE / 2 - (SLAB_DEPTH - BEVEL)));
     mesh.quaternion.copy(rotation);
     cubies.get(posKey(s.pos))!.add(mesh);
     return mat;
