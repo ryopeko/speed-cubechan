@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Cube from "./Cube";
+import ShareButton from "./ShareButton";
 import Tabs from "./Tabs";
 import { applyMoves, formatMove, invertMoves, parseAlg, SOLVED, type Move } from "@/lib/cube";
 import type { Pattern } from "@/data/patterns";
@@ -25,9 +26,12 @@ const turnTime = (move: Move, turn: number) => turn * (move.amount === 2 ? 2 : 1
 export default function CasePlayer({
   pattern,
   showAnswer = true,
+  share,
 }: {
   pattern: Pattern;
   showAnswer?: boolean;
+  /** When given, a share button sits at the right end of the mode tabs. */
+  share?: { url: string; title: string };
 }) {
   const { algMoves, setupMoves, caseState } = useMemo(() => {
     const algMoves = parseAlg(pattern.alg);
@@ -81,17 +85,20 @@ export default function CasePlayer({
 
       {showAnswer && (
         <>
-          <Tabs
-            options={[
-              ["alg", "アルゴリズム"],
-              ["setup", "セットアップ"],
-            ]}
-            value={mode}
-            onChange={(m) => {
-              setMode(m);
-              go(0);
-            }}
-          />
+          <div className="flex items-center justify-between gap-2">
+            <Tabs
+              options={[
+                ["alg", "アルゴリズム"],
+                ["setup", "セットアップ"],
+              ]}
+              value={mode}
+              onChange={(m) => {
+                setMode(m);
+                go(0);
+              }}
+            />
+            {share && <ShareButton url={share.url} title={share.title} />}
+          </div>
 
           <p className="text-muted">
             {mode === "alg"

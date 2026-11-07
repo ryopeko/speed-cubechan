@@ -38,7 +38,11 @@ async function PatternDetail({ params }: { params: Promise<{ id: string }> }) {
         <Title>{pattern.name}</Title>
         <MarkButton id={pattern.id} />
       </div>
-      <CasePlayer key={pattern.id} pattern={pattern} />
+      <CasePlayer
+        key={pattern.id}
+        pattern={pattern}
+        share={{ url: siteUrl(`/patterns/${pattern.id}/`), title: `${pattern.name} | スピードキュービちゃん` }}
+      />
       <section className="mt-8 flex items-center gap-4 rounded-xl border border-line bg-surface p-4">
         <QrCode
           value={siteUrl(`/patterns/${pattern.id}/`)}
