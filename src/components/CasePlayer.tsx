@@ -119,35 +119,38 @@ export default function CasePlayer({
             ))}
           </ol>
 
-          <div className="flex flex-wrap gap-2">
-            <button className="btn" onClick={() => go(0)} disabled={position === 0}>
-              ⏮ 最初に戻す
+          {/* On phones the three step buttons share one row with shortened labels. */}
+          <div className="grid grid-cols-[1fr_1fr_1.4fr] gap-2 sm:flex sm:flex-wrap">
+            <button className="btn whitespace-nowrap" onClick={() => go(0)} disabled={position === 0}>
+              ⏮ 最初<span className="hidden sm:inline">に戻す</span>
             </button>
             <button
-              className="btn"
+              className="btn whitespace-nowrap"
               onClick={() => go(position - 1)}
               disabled={position === 0}
             >
-              ◀ 1 手戻す
+              ◀ <span className="hidden sm:inline">1 手</span>戻す
             </button>
             <button
-              className="btn-primary"
+              className="btn-primary whitespace-nowrap"
               onClick={() => go(position + 1)}
               disabled={done}
             >
               {done ? "おわり" : `${formatMove(moves[position])} を回す ▶`}
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <button className="btn min-w-[9em]" onClick={togglePlay}>
               {isPlaying ? "⏸ 止める" : done ? "↺ もう一度再生" : "▶ 自動で再生"}
             </button>
-            <span className="ml-2 text-sm text-muted">速さ</span>
-            <Tabs
-              options={(Object.keys(SPEEDS) as Speed[]).map((k) => [k, SPEEDS[k].label] as const)}
-              value={speed}
-              onChange={setSpeed}
-            />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted">速さ</span>
+              <Tabs
+                options={(Object.keys(SPEEDS) as Speed[]).map((k) => [k, SPEEDS[k].label] as const)}
+                value={speed}
+                onChange={setSpeed}
+              />
+            </div>
           </div>
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted">
             <span>

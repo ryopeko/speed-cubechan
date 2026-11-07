@@ -120,7 +120,8 @@ function roundedRect({ x0, x1, y0, y1 }: Bounds, r: CornerRadii): THREE.Shape {
 
 function createScene(container: HTMLDivElement): Scene {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
+  // Capped at 2: 3x phone screens look the same but cost over twice the fill rate.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping; // keeps the vivid plastic colors saturated
   renderer.toneMappingExposure = 1.05;
