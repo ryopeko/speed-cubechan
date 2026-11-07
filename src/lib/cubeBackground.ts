@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-/** Backgrounds to try behind the 3D cube. `dark` picks light grid lines. */
+/** Backgrounds to try behind the 3D cube. `dark` makes the floor grid lines light. */
 export const BACKGROUNDS = {
   greige: { label: "グレージュ", color: "#e3dfd6", dark: false },
   gray: { label: "グレー", color: "#d3d5d8", dark: false },
@@ -70,15 +70,7 @@ export function useCubeBackground() {
   return [value, update] as const;
 }
 
-/** Inline style for the box behind the cube. */
-export function backgroundStyle({ bg, grid }: CubeBackground): React.CSSProperties {
-  const { color, dark } = BACKGROUNDS[bg];
-  if (!grid) return { backgroundColor: color };
-  const line = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
-  return {
-    backgroundColor: color,
-    backgroundImage: `linear-gradient(to right, ${line} 1px, transparent 1px), linear-gradient(to bottom, ${line} 1px, transparent 1px)`,
-    backgroundSize: "24px 24px",
-    backgroundPosition: "center center",
-  };
+/** Inline style for the box behind the cube. (The grid is drawn in 3D by the cube view.) */
+export function backgroundStyle({ bg }: CubeBackground): React.CSSProperties {
+  return { backgroundColor: BACKGROUNDS[bg].color };
 }

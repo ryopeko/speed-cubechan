@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import BackgroundPicker from "./BackgroundPicker";
 import { CUBE_BOX } from "./cubeBox";
-import { backgroundStyle, useCubeBackground } from "@/lib/cubeBackground";
+import { BACKGROUNDS, backgroundStyle, useCubeBackground } from "@/lib/cubeBackground";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -92,6 +92,8 @@ type Scene = {
   setState: (state: CubeState) => void;
   animate: (move: Move, quarterTurnMs: number, onDone: () => void) => void;
   cancelAnimation: () => void;
+  /** Show or hide the floor grid (and the cube's shadow on it). */
+  setFloor: (visible: boolean, lineColor: string) => void;
   dispose: () => void;
 };
 
@@ -153,11 +155,12 @@ function createScene(container: HTMLDivElement): Scene {
   const key = new THREE.DirectionalLight(0xffffff, 3.2);
   key.position.set(0.8, 1.6, 0); // relative to the camera: nearly head-on, a bit above
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
-  key.shadow.camera.left = -2.4;
-  key.shadow.camera.right = 2.4;
-  key.shadow.camera.top = 2.4;
-  key.shadow.camera.bottom = -2.4;
+  key.shadow.mapSize.set(3072, 3072);
+  // Wide enough to also cover the cube's shadow on the floor.
+  key.shadow.camera.left = -3.2;
+  key.shadow.camera.right = 3.2;
+  key.shadow.camera.top = 3.2;
+  key.shadow.camera.bottom = -3.2;
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 30;
   key.shadow.radius = 4;
@@ -166,6 +169,53 @@ function createScene(container: HTMLDivElement): Scene {
   camera.add(key);
   scene.add(camera);
   scene.add(key.target); // aims at the origin
+
+  // Floor under the cube: a grid whose cells line up with the pieces and fade
+  // out with distance, plus a plane that only shows the cube's shadow.
+  const FLOOR_Y = -1.5;
+  const floorGeo = new THREE.PlaneGeometry(16, 16).rotateX(-Math.PI / 2);
+  const gridMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uColor: { value: new THREE.Color() },
+      uOpacity: { value: 0.3 },
+    },
+    vertexShader: `
+      varying vec2 vXZ;
+      void main() {
+        vec4 world = modelMatrix * vec4(position, 1.0);
+        vXZ = world.xz;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      varying vec2 vXZ;
+      void main() {
+        // Lines on the piece boundaries (x, z = k + 0.5), about 1px wide at any distance.
+        vec2 p = vXZ + 0.5;
+        vec2 g = abs(fract(p - 0.5) - 0.5) / fwidth(p);
+        float line = 1.0 - min(min(g.x, g.y), 1.0);
+        float fade = 1.0 - smoothstep(2.0, 6.5, length(vXZ));
+        float alpha = line * fade * uOpacity;
+        if (alpha < 0.003) discard;
+        gl_FragColor = vec4(uColor, alpha);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const grid = new THREE.Mesh(floorGeo, gridMat);
+  grid.position.y = FLOOR_Y;
+  grid.renderOrder = 1;
+  const shadowMat = new THREE.ShadowMaterial({ opacity: 0.16 });
+  const shadowCatcher = new THREE.Mesh(floorGeo, shadowMat);
+  shadowCatcher.position.y = FLOOR_Y - 0.002;
+  shadowCatcher.receiveShadow = true;
+  const floor = new THREE.Group();
+  floor.add(shadowCatcher, grid);
+  floor.visible = false;
+  scene.add(floor);
 
   // 27 cubies: an ivory core with a glossy colored slab for each sticker.
   const body = new RoundedBoxGeometry(CORE_SIZE, CORE_SIZE, CORE_SIZE, 3, 0.04);
@@ -320,6 +370,10 @@ function createScene(container: HTMLDivElement): Scene {
         onDone,
       };
     },
+    setFloor(visible, lineColor) {
+      floor.visible = visible;
+      gridMat.uniforms.uColor.value.set(lineColor);
+    },
     cancelAnimation() {
       anim = null;
       releasePivot();
@@ -333,6 +387,9 @@ function createScene(container: HTMLDivElement): Scene {
       tileGeos.forEach((g) => g.dispose());
       stickerMats.forEach((m) => m.dispose());
       envMap.dispose();
+      floorGeo.dispose();
+      gridMat.dispose();
+      shadowMat.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },
@@ -352,6 +409,7 @@ export default function CubeView({
   useEffect(() => {
     quarterTurnMsRef.current = quarterTurnMs;
   }, [quarterTurnMs]);
+  const [background] = useCubeBackground();
   // What the scene currently shows (or will show once the running turn ends).
   const shownRef = useRef<{ start: CubeState; moves: readonly Move[]; position: number } | null>(
     null,
@@ -366,6 +424,11 @@ export default function CubeView({
       shownRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const dark = BACKGROUNDS[background.bg].dark;
+    sceneRef.current?.setFloor(background.grid, dark ? "#ffffff" : "#000000");
+  }, [background]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -386,8 +449,6 @@ export default function CubeView({
       scene.setState(applyMoves(start, moves.slice(0, position)));
     }
   }, [start, moves, position]);
-
-  const [background] = useCubeBackground();
 
   return (
     <div className={CUBE_BOX} style={backgroundStyle(background)}>
