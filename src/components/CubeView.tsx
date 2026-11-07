@@ -42,12 +42,12 @@ const COLORS: Record<Face, number> = {
  * core instead of a flat plate behind a label.
  */
 /** Outer size of a piece (1 is the spacing, so 1 - PIECE_SIZE is the gap). */
-const PIECE_SIZE = 0.99;
+const PIECE_SIZE = 0.975;
 /** Thickness of a colored slab, and the size of the core behind the slabs. */
 const SLAB_DEPTH = 0.12;
 const CORE_SIZE = 0.8;
 /** Bevel on a slab's outline and front edge. */
-const BEVEL = 0.014;
+const BEVEL = 0.018;
 /** Slab outline before the bevel is added around it. */
 const SLAB_OUTLINE = PIECE_SIZE - 2 * BEVEL;
 /**
@@ -56,7 +56,7 @@ const SLAB_OUTLINE = PIECE_SIZE - 2 * BEVEL;
  * slab's front and the two colors flicker (z-fighting). Pulled back, each side
  * hides inside the other slab, and the edge looks rounded. Must exceed BEVEL.
  */
-const EDGE_INSET = 0.022;
+const EDGE_INSET = 0.026;
 
 /**
  * Slab corner radii. Only the middle of the face is rounded: the center piece
@@ -80,7 +80,7 @@ function cornerRadius(tileOffset: number, cornerDistance: number): number {
 }
 
 /** The ivory core plastic that shows in the gaps and under rounded corners. */
-const BODY_COLOR = 0xcfc9bb;
+const BODY_COLOR = 0xb3ac9d;
 
 /** Default time for a quarter turn. */
 export const QUARTER_TURN_MS = 300;
