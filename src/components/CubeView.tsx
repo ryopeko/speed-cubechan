@@ -152,7 +152,7 @@ function createScene(container: HTMLDivElement): Scene {
   scene.environmentIntensity = 0.22;
   scene.add(new THREE.HemisphereLight(0xffffff, 0x6f6a60, 0.18));
 
-  const key = new THREE.DirectionalLight(0xffffff, 3.2);
+  const key = new THREE.DirectionalLight(0xffffff, 2.5);
   key.position.set(0.8, 1.6, 0); // relative to the camera: nearly head-on, a bit above
   key.castShadow = true;
   key.shadow.mapSize.set(3072, 3072);
