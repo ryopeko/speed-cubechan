@@ -60,12 +60,15 @@ export default function CasePlayer({
             {moves.map((m, i) => (
               <li
                 key={i}
-                className={`min-w-[2.4em] rounded-md border bg-surface px-2 py-0.5 text-center font-mono ${
-                  i < position
-                    ? "border-line opacity-40"
-                    : i === position
-                      ? "border-accent font-bold ring-1 ring-accent"
-                      : "border-line"
+                aria-current={i === position - 1 ? "step" : undefined}
+                className={`min-w-[2.4em] rounded-md border px-2 py-0.5 text-center font-mono ${
+                  i === position - 1
+                    ? "border-accent bg-accent font-bold text-white"
+                    : i < position
+                      ? "border-line bg-surface opacity-40"
+                      : i === position
+                        ? "border-dashed border-accent bg-surface text-accent"
+                        : "border-line bg-surface"
                 }`}
               >
                 {formatMove(m)}
@@ -89,12 +92,20 @@ export default function CasePlayer({
               onClick={() => setPosition((p) => Math.min(moves.length, p + 1))}
               disabled={done}
             >
-              1 手進める ▶
+              {done ? "おわり" : `${formatMove(moves[position])} を回す ▶`}
             </button>
           </div>
-          <p className="text-muted">
-            {position} / {moves.length} 手
-            {done && (mode === "alg" ? " ・ 揃いました" : " ・ 形ができました")}
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted">
+            <span>
+              {position} / {moves.length} 手
+              {done && (mode === "alg" ? " ・ 揃いました" : " ・ 形ができました")}
+            </span>
+            <span className="flex items-center gap-1.5 text-sm">
+              <span className="inline-block size-3 rounded-sm bg-accent" /> いま回した手
+            </span>
+            <span className="flex items-center gap-1.5 text-sm">
+              <span className="inline-block size-3 rounded-sm border border-dashed border-accent" /> 次の手
+            </span>
           </p>
 
           <dl className="rounded-xl border border-line bg-surface p-3">
