@@ -34,7 +34,8 @@ const COLORS: Record<Face, number> = {
 /** The ivory plastic that shows in the gaps between tiles. */
 const BODY_COLOR = 0xd9d4c8;
 
-const TURN_MS = 220;
+/** Time for a quarter turn. A half turn (U2) takes twice as long, so it turns at the same speed. */
+const QUARTER_TURN_MS = 300;
 const posKey = (p: Vec3) => p.join(",");
 
 type Scene = {
@@ -128,7 +129,13 @@ function createScene(container: HTMLDivElement): Scene {
   // A pivot that holds the turning layer during an animation.
   const pivot = new THREE.Group();
   scene.add(pivot);
-  let anim: { axis: THREE.Vector3; angle: number; t0: number; onDone: () => void } | null = null;
+  let anim: {
+    axis: THREE.Vector3;
+    angle: number;
+    t0: number;
+    duration: number;
+    onDone: () => void;
+  } | null = null;
 
   const releasePivot = () => {
     pivot.rotation.set(0, 0, 0);
@@ -147,8 +154,9 @@ function createScene(container: HTMLDivElement): Scene {
   const loop = (now: number) => {
     frame = requestAnimationFrame(loop);
     if (anim) {
-      const t = Math.min(1, (now - anim.t0) / TURN_MS);
-      const eased = t * (2 - t);
+      const t = Math.min(1, (now - anim.t0) / anim.duration);
+      // Ease in and out, so the start of the turn is easy to follow.
+      const eased = t < 0.5 ? 2 * t * t : 1 - (2 - 2 * t) ** 2 / 2;
       pivot.quaternion.setFromAxisAngle(anim.axis, anim.angle * eased);
       if (t >= 1) {
         const { onDone } = anim;
@@ -176,6 +184,7 @@ function createScene(container: HTMLDivElement): Scene {
         axis: new THREE.Vector3(...axis),
         angle: (quarter * Math.PI) / 2,
         t0: performance.now(),
+        duration: QUARTER_TURN_MS * Math.abs(quarter),
         onDone,
       };
     },
