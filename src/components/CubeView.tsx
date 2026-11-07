@@ -37,9 +37,25 @@ const COLORS: Record<Face, number> = {
 /** Cubie size (1 is the spacing, so 1 - CUBIE_SIZE is the gap) and its edge radius. */
 const CUBIE_SIZE = 0.99;
 const CUBIE_RADIUS = 0.06;
-/** Tile outline before the bevel (which adds 0.015 on each side), and its corner radius. */
+/** Tile outline before the bevel (which adds 0.015 on each side). */
 const TILE_SIZE = 0.86;
-const TILE_RADIUS = 0.1;
+/**
+ * Tile corner radii. Like a stickerless cube, corners get rounder toward the
+ * middle of the face: the center tile is nearly a circle, and the corners of
+ * the other tiles that touch it are rounded much more than the outer ones.
+ */
+const CENTER_TILE_RADIUS = 0.4;
+const INNER_CORNER_RADIUS = 0.26;
+const MIDDLE_CORNER_RADIUS = 0.1;
+const OUTER_CORNER_RADIUS = 0.06;
+
+/** Radius for a tile corner, by its distance from the face center (in cubie units). */
+function cornerRadius(distance: number, isCenterTile: boolean): number {
+  if (isCenterTile) return CENTER_TILE_RADIUS;
+  if (distance < 1) return INNER_CORNER_RADIUS; // ≈ 0.71: touches the center tile
+  if (distance < 2) return MIDDLE_CORNER_RADIUS; // ≈ 1.58
+  return OUTER_CORNER_RADIUS; // ≈ 2.12: the cube's corner
+}
 /** The ivory plastic that shows in the gaps between tiles. */
 const BODY_COLOR = 0xd9d4c8;
 
@@ -54,19 +70,21 @@ type Scene = {
   dispose: () => void;
 };
 
-function roundedSquare(size: number, radius: number): THREE.Shape {
+/** Corner radii keyed by the corner's signs in tile-local x and y. */
+type CornerRadii = { pp: number; np: number; nn: number; pn: number };
+
+function roundedRect(size: number, r: CornerRadii): THREE.Shape {
   const h = size / 2;
-  const r = radius;
   const shape = new THREE.Shape();
-  shape.moveTo(-h + r, -h);
-  shape.lineTo(h - r, -h);
-  shape.quadraticCurveTo(h, -h, h, -h + r);
-  shape.lineTo(h, h - r);
-  shape.quadraticCurveTo(h, h, h - r, h);
-  shape.lineTo(-h + r, h);
-  shape.quadraticCurveTo(-h, h, -h, h - r);
-  shape.lineTo(-h, -h + r);
-  shape.quadraticCurveTo(-h, -h, -h + r, -h);
+  shape.moveTo(-h + r.nn, -h);
+  shape.lineTo(h - r.pn, -h);
+  shape.absarc(h - r.pn, -h + r.pn, r.pn, -Math.PI / 2, 0, false);
+  shape.lineTo(h, h - r.pp);
+  shape.absarc(h - r.pp, h - r.pp, r.pp, 0, Math.PI / 2, false);
+  shape.lineTo(-h + r.np, h);
+  shape.absarc(-h + r.np, h - r.np, r.np, Math.PI / 2, Math.PI, false);
+  shape.lineTo(-h, -h + r.nn);
+  shape.absarc(-h + r.nn, -h + r.nn, r.nn, Math.PI, (Math.PI * 3) / 2, false);
   return shape;
 }
 
@@ -100,14 +118,24 @@ function createScene(container: HTMLDivElement): Scene {
   const bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR, roughness: 0.6 });
   // Each tile is a thin slab with beveled edges. Its back sinks into the body,
   // so the rounded body corners never leave a gap under the tile.
-  const stickerGeo = new THREE.ExtrudeGeometry(roundedSquare(TILE_SIZE, TILE_RADIUS), {
-    depth: 0.012,
-    bevelEnabled: true,
-    bevelThickness: 0.012,
-    bevelSize: 0.015,
-    bevelSegments: 4,
-    curveSegments: 8,
-  });
+  // Tiles differ only by their corner radii, so geometries are shared by those.
+  const tileGeos = new Map<string, THREE.ExtrudeGeometry>();
+  const tileGeo = (r: CornerRadii) => {
+    const k = `${r.pp},${r.np},${r.nn},${r.pn}`;
+    let geo = tileGeos.get(k);
+    if (!geo) {
+      geo = new THREE.ExtrudeGeometry(roundedRect(TILE_SIZE, r), {
+        depth: 0.012,
+        bevelEnabled: true,
+        bevelThickness: 0.012,
+        bevelSize: 0.015,
+        bevelSegments: 4,
+        curveSegments: 12,
+      });
+      tileGeos.set(k, geo);
+    }
+    return geo;
+  };
   const cubies = new Map<string, THREE.Group>();
   for (let x = -1; x <= 1; x++)
     for (let y = -1; y <= 1; y++)
@@ -124,11 +152,31 @@ function createScene(container: HTMLDivElement): Scene {
       color: COLORS[s.face],
       roughness: 0.32,
     });
-    const mesh = new THREE.Mesh(stickerGeo, mat);
     const n = new THREE.Vector3(...s.normal);
+    const rotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
+    // Where the tile sits on its face, relative to the face center.
+    const pos = new THREE.Vector3(...s.pos);
+    const offset = pos.clone().sub(n.clone().multiplyScalar(pos.dot(n)));
+    const ex = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
+    const ey = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation);
+    const radius = (sx: number, sy: number) => {
+      const corner = offset
+        .clone()
+        .addScaledVector(ex, sx * 0.5)
+        .addScaledVector(ey, sy * 0.5);
+      return cornerRadius(corner.length(), offset.lengthSq() === 0);
+    };
+    const geo = tileGeo({
+      pp: radius(1, 1),
+      np: radius(-1, 1),
+      nn: radius(-1, -1),
+      pn: radius(1, -1),
+    });
+
+    const mesh = new THREE.Mesh(geo, mat);
     // The slab spans z = -0.012 to 0.024; put its front just above the body face.
     mesh.position.copy(n.clone().multiplyScalar(CUBIE_SIZE / 2 + 0.004 - 0.024));
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
+    mesh.quaternion.copy(rotation);
     cubies.get(posKey(s.pos))!.add(mesh);
     return mat;
   });
@@ -216,7 +264,7 @@ function createScene(container: HTMLDivElement): Scene {
       controls.dispose();
       body.dispose();
       bodyMat.dispose();
-      stickerGeo.dispose();
+      tileGeos.forEach((g) => g.dispose());
       stickerMats.forEach((m) => m.dispose());
       renderer.dispose();
       renderer.domElement.remove();
