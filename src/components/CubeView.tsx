@@ -34,9 +34,12 @@ const COLORS: Record<Face, number> = {
   R: 0xff7612, // orange
   L: 0xd6122d, // red
 };
-/** Tile outline before the bevel (which adds 0.025 on each side), and its corner radius. */
-const TILE_SIZE = 0.82;
-const TILE_RADIUS = 0.2;
+/** Cubie size (1 is the spacing, so 1 - CUBIE_SIZE is the gap) and its edge radius. */
+const CUBIE_SIZE = 0.99;
+const CUBIE_RADIUS = 0.06;
+/** Tile outline before the bevel (which adds 0.015 on each side), and its corner radius. */
+const TILE_SIZE = 0.86;
+const TILE_RADIUS = 0.1;
 /** The ivory plastic that shows in the gaps between tiles. */
 const BODY_COLOR = 0xd9d4c8;
 
@@ -74,8 +77,9 @@ function createScene(container: HTMLDivElement): Scene {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-  camera.position.set(4.2, 4.6, 6.2);
+  const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 100);
+  // A narrow angle from further away keeps the perspective mild.
+  camera.position.set(6.1, 6.7, 9.0);
   camera.lookAt(0, 0, 0);
 
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -92,15 +96,15 @@ function createScene(container: HTMLDivElement): Scene {
   scene.add(fill);
 
   // 27 cubies: an ivory body with a rounded, glossy tile for each sticker on it.
-  const body = new RoundedBoxGeometry(0.97, 0.97, 0.97, 5, 0.13);
+  const body = new RoundedBoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE, 4, CUBIE_RADIUS);
   const bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR, roughness: 0.6 });
   // Each tile is a thin slab with beveled edges. Its back sinks into the body,
   // so the rounded body corners never leave a gap under the tile.
   const stickerGeo = new THREE.ExtrudeGeometry(roundedSquare(TILE_SIZE, TILE_RADIUS), {
-    depth: 0.02,
+    depth: 0.012,
     bevelEnabled: true,
-    bevelThickness: 0.02,
-    bevelSize: 0.025,
+    bevelThickness: 0.012,
+    bevelSize: 0.015,
     bevelSegments: 4,
     curveSegments: 8,
   });
@@ -122,8 +126,8 @@ function createScene(container: HTMLDivElement): Scene {
     });
     const mesh = new THREE.Mesh(stickerGeo, mat);
     const n = new THREE.Vector3(...s.normal);
-    // The slab spans z = -0.02 to 0.04; put its front just above the body face (0.485).
-    mesh.position.copy(n.clone().multiplyScalar(0.452));
+    // The slab spans z = -0.012 to 0.024; put its front just above the body face.
+    mesh.position.copy(n.clone().multiplyScalar(CUBIE_SIZE / 2 + 0.004 - 0.024));
     mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
     cubies.get(posKey(s.pos))!.add(mesh);
     return mat;
