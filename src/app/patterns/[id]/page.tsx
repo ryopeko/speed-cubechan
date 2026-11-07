@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import CasePlayer from "@/components/CasePlayer";
@@ -33,10 +32,6 @@ async function PatternDetail({ params }: { params: Promise<{ id: string }> }) {
   const pattern = findPattern(id);
   if (!pattern) notFound();
 
-  const index = PATTERNS.indexOf(pattern);
-  const prev = PATTERNS[index - 1];
-  const next = PATTERNS[index + 1];
-
   return (
     <>
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -44,10 +39,6 @@ async function PatternDetail({ params }: { params: Promise<{ id: string }> }) {
         <MarkButton id={pattern.id} />
       </div>
       <CasePlayer key={pattern.id} pattern={pattern} />
-      <nav className="mt-6 flex justify-between">
-        {prev ? <Link href={`/patterns/${prev.id}`}>← {prev.name}</Link> : <span />}
-        {next ? <Link href={`/patterns/${next.id}`}>{next.name} →</Link> : <span />}
-      </nav>
       <section className="mt-8 flex items-center gap-4 rounded-xl border border-line bg-surface p-4">
         <QrCode
           value={siteUrl(`/patterns/${pattern.id}/`)}
