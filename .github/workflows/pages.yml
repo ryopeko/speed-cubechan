@@ -26,10 +26,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - name: Build static site
+        # Served from the custom domain root (https://speed-cubechan.com/),
+        # so no basePath is needed.
         run: npm run build
-        env:
-          # Served from https://<owner>.github.io/<repo>/
-          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
       # Keep GitHub Pages from running Jekyll, which would drop the _next/ folder.
       - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3

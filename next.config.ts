@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-// GitHub Pages serves the site under /<repo>/, so the production build
-// needs a basePath. Local dev keeps serving from /.
+// The site is served from the custom domain root, so basePath is empty by
+// default. Set NEXT_PUBLIC_BASE_PATH only if it moves under a sub-path.
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const nextConfig: NextConfig = {

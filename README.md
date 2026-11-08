@@ -2,7 +2,7 @@
 
 OLL・PLL を選んで練習する個人用ツール。Next.js (App Router) + Three.js、保存は localStorage。
 
-**サイト:** https://ryopeko.github.io/speed-cubechan/ (main に push すると GitHub Pages に公開されます)
+**サイト:** https://speed-cubechan.com/ (main に push すると GitHub Pages に公開されます)
 
 <img src="docs/qr.svg" alt="サイトの QR コード" width="160">
 
