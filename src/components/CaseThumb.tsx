@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { applyMoves, invertMoves, parseAlg, SOLVED, STICKERS, type Face, type Vec3 } from "@/lib/cube";
 import type { Pattern } from "@/data/patterns";
 
@@ -6,6 +5,7 @@ import type { Pattern } from "@/data/patterns";
  * A small drawing of a case: the top face seen from slightly in front and
  * above, with the top row of each side face folded out around it (like the
  * usual OLL/PLL diagrams, tilted). Plain SVG, so a list of 78 stays cheap.
+ * No hooks either: the og:image routes render it with ImageResponse too.
  */
 
 // Match --color-cube-* in globals.css.
@@ -97,15 +97,17 @@ const VIEW_BOX = `${minX.toFixed(3)} ${minY.toFixed(3)} ${(maxX - minX).toFixed(
 const QUAD_PATHS = QUADS.map((q) => ({ index: q.index, d: toPath(q.points) }));
 const BODY_PATH = toPath(BODY_QUAD);
 
-export default function CaseThumb({ pattern, className }: { pattern: Pattern; className?: string }) {
-  const state = useMemo(
-    () => applyMoves(SOLVED, invertMoves(parseAlg(pattern.alg))),
-    [pattern.alg],
-  );
+/** Width / height of the drawing, for sizing it without CSS. */
+export const CASE_THUMB_ASPECT = (maxX - minX) / (maxY - minY);
+
+type Props = { pattern: Pattern; className?: string; width?: number; height?: number };
+
+export default function CaseThumb({ pattern, className, width, height }: Props) {
+  const state = applyMoves(SOLVED, invertMoves(parseAlg(pattern.alg)));
   const color = (f: Face) => (pattern.kind === "OLL" ? (f === "U" ? COLORS.U : OTHER) : COLORS[f]);
 
   return (
-    <svg viewBox={VIEW_BOX} className={className} aria-hidden>
+    <svg viewBox={VIEW_BOX} className={className} width={width} height={height} aria-hidden>
       <polygon points={BODY_PATH} fill={BODY} stroke={BODY} strokeWidth={0.2} strokeLinejoin="round" />
       {QUAD_PATHS.map((q) => (
         <polygon

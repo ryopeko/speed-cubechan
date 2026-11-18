@@ -4,11 +4,16 @@ import Link from "next/link";
 import cubechan from "@/assets/cubechan.png";
 import DopaEffects from "@/components/DopaEffects";
 import Mascot from "@/components/Mascot";
+import { ogMetadata } from "@/lib/og";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Makes the og:image URLs absolute.
+  metadataBase: new URL(SITE_URL),
   title: "スピードキュービちゃん",
   description: "OLL・PLL の練習ツール",
+  ...ogMetadata("/og-image.png", "スピードキュービちゃん — OLL・PLL の練習ツール"),
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
