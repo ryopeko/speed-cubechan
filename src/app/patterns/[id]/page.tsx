@@ -6,6 +6,7 @@ import Main, { Title } from "@/components/Main";
 import MarkButton from "@/components/MarkButton";
 import QrCode from "@/components/QrCode";
 import { findPattern, PATTERNS } from "@/data/patterns";
+import { ogMetadata } from "@/lib/og";
 import { siteUrl } from "@/lib/site";
 
 export function generateStaticParams() {
@@ -14,7 +15,11 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<"/patterns/[id]">) {
   const { id } = await props.params;
-  return { title: `${findPattern(id)?.name ?? "?"} | スピードキュービちゃん` };
+  const name = findPattern(id)?.name ?? "?";
+  return {
+    title: `${name} | スピードキュービちゃん`,
+    ...ogMetadata(`/patterns/${id}/og-image.png`, `${name} のケースの図`),
+  };
 }
 
 export default function PatternPage(props: PageProps<"/patterns/[id]">) {
