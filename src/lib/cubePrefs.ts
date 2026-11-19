@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import type { MessageKey } from "@/i18n/messages";
 
 /** Backgrounds to try behind the 3D cube. `dark` makes the floor grid lines light. */
 export const BACKGROUNDS = {
-  greige: { label: "グレージュ", color: "#e3dfd6", dark: false },
-  gray: { label: "グレー", color: "#d3d5d8", dark: false },
-  mat: { label: "マット", color: "#33322f", dark: true },
-  white: { label: "白", color: "#fffefb", dark: false },
-} as const;
+  greige: { label: "settings.bgGreige", color: "#e3dfd6", dark: false },
+  gray: { label: "settings.bgGray", color: "#d3d5d8", dark: false },
+  mat: { label: "settings.bgMat", color: "#33322f", dark: true },
+  white: { label: "settings.bgWhite", color: "#fffefb", dark: false },
+} as const satisfies Record<string, { label: MessageKey; color: string; dark: boolean }>;
 
 export type BackgroundId = keyof typeof BACKGROUNDS;
 

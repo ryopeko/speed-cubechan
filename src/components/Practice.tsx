@@ -7,6 +7,7 @@ import MarkButton from "./MarkButton";
 import Tabs from "./Tabs";
 import { useMarks } from "@/lib/marks";
 import { PATTERNS, type Pattern, type PatternKind } from "@/data/patterns";
+import { useT } from "@/i18n/useLang";
 
 type KindFilter = "all" | PatternKind;
 
@@ -18,6 +19,7 @@ function pick(pool: readonly Pattern[], current?: Pattern): Pattern | undefined 
 
 export default function Practice() {
   const { marks } = useMarks();
+  const t = useT();
   const [kind, setKind] = useState<KindFilter>("all");
   const [current, setCurrent] = useState<Pattern>();
   const [revealed, setRevealed] = useState(false);
@@ -36,7 +38,7 @@ export default function Practice() {
     <>
       <Tabs
         options={[
-          ["all", "すべて"],
+          ["all", t("list.all")],
           ["OLL", "OLL"],
           ["PLL", "PLL"],
         ]}
@@ -49,13 +51,15 @@ export default function Practice() {
 
       {pool.length === 0 ? (
         <p className="mt-4 text-muted">
-          覚えたパターンがありません。<Link href="/">一覧</Link>で「覚えた」を付けてください。
+          {t("practice.emptyBefore")}
+          <Link href="/">{t("practice.emptyLink")}</Link>
+          {t("practice.emptyAfter")}
         </p>
       ) : !current ? (
         <div className="mt-4 flex flex-col items-start gap-2">
-          <p>覚えた {pool.length} 個の中から、ランダムに 1 つ出します。</p>
+          <p>{t("practice.intro", { count: pool.length })}</p>
           <button className="btn-primary" onClick={next}>
-            はじめる
+            {t("practice.start")}
           </button>
         </div>
       ) : (
@@ -64,10 +68,10 @@ export default function Practice() {
             {revealed ? (
               <>
                 <strong className="text-ink">{current.name}</strong>{" "}
-                <Link href={`/patterns/${current.id}`}>詳細</Link>
+                <Link href={`/patterns/${current.id}`}>{t("practice.details")}</Link>
               </>
             ) : (
-              "この形の手順を思い出してから、答えを見てください。"
+              t("practice.prompt")
             )}
           </p>
           <CasePlayer key={`${current.id}-${round}`} pattern={current} showAnswer={revealed} />
@@ -76,12 +80,12 @@ export default function Practice() {
               <>
                 <MarkButton id={current.id} />
                 <button className="btn-primary" onClick={next}>
-                  次へ ▶
+                  {t("practice.next")}
                 </button>
               </>
             ) : (
               <button className="btn-primary" onClick={() => setRevealed(true)}>
-                答えを見る
+                {t("practice.reveal")}
               </button>
             )}
           </div>

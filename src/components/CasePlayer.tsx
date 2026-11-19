@@ -6,18 +6,21 @@ import ShareButton from "./ShareButton";
 import Tabs from "./Tabs";
 import { applyMoves, formatMove, invertMoves, parseAlg, SOLVED, type Move } from "@/lib/cube";
 import type { Pattern } from "@/data/patterns";
+import type { MessageKey } from "@/i18n/messages";
+import { useLang, useT } from "@/i18n/useLang";
+import { sharePath, siteUrl } from "@/lib/site";
 import { emitDopa, onDopaChange, useDopa } from "@/lib/dopa";
 
 type Mode = "alg" | "setup";
 type Speed = "slow" | "normal" | "fast" | "dopa";
 
 /** Quarter-turn time and the pause after each move, in ms. */
-const SPEEDS: Record<Speed, { label: string; turn: number; pause: number }> = {
-  slow: { label: "ゆっくり", turn: 700, pause: 900 },
-  normal: { label: "ふつう", turn: 300, pause: 500 },
-  fast: { label: "はやい", turn: 180, pause: 150 },
-  // ドパモード only: between ふつう and はやい.
-  dopa: { label: "ドパ", turn: 240, pause: 320 },
+const SPEEDS: Record<Speed, { label: MessageKey; turn: number; pause: number }> = {
+  slow: { label: "player.speedSlow", turn: 700, pause: 900 },
+  normal: { label: "player.speedNormal", turn: 300, pause: 500 },
+  fast: { label: "player.speedFast", turn: 180, pause: 150 },
+  // Dopa Mode only: between normal and fast.
+  dopa: { label: "player.speedDopa", turn: 240, pause: 320 },
 };
 
 const turnTime = (move: Move, turn: number) => turn * (move.amount === 2 ? 2 : 1);
@@ -29,13 +32,15 @@ const turnTime = (move: Move, turn: number) => turn * (move.amount === 2 ? 2 : 1
 export default function CasePlayer({
   pattern,
   showAnswer = true,
-  share,
+  sharePagePath,
 }: {
   pattern: Pattern;
   showAnswer?: boolean;
-  /** When given, a share button sits at the right end of the mode tabs. */
-  share?: { url: string; title: string };
+  /** When given, a share button for this page (e.g. "/patterns/oll-1/") sits at the right end of the mode tabs. */
+  sharePagePath?: string;
 }) {
+  const t = useT();
+  const lang = useLang();
   const { algMoves, setupMoves, caseState } = useMemo(() => {
     const algMoves = parseAlg(pattern.alg);
     const setupMoves = invertMoves(algMoves);
@@ -63,7 +68,7 @@ export default function CasePlayer({
     return () => clearTimeout(timer);
   }, [isPlaying, position, playFrom, moves, speed]);
 
-  // ドパモード: on switching it on, start auto play from the top at the ドパ
+  // Dopa Mode: on switching it on, start auto play from the top at the dopa
   // speed (after the opening effect); on switching it off, restore the speed.
   const dopa = useDopa();
   const speedBeforeDopa = useRef<Speed>("slow");
@@ -93,7 +98,7 @@ export default function CasePlayer({
     };
   }, [showAnswer]);
 
-  // ドパモード: celebrate each move once it has finished turning, and the end.
+  // Dopa Mode: celebrate each move once it has finished turning, and the end.
   const lastPosition = useRef(position);
   useEffect(() => {
     const stepped = position === lastPosition.current + 1;
@@ -135,8 +140,8 @@ export default function CasePlayer({
           <div className="flex items-center justify-between gap-2">
             <Tabs
               options={[
-                ["alg", "アルゴリズム"],
-                ["setup", "セットアップ"],
+                ["alg", t("player.alg")],
+                ["setup", t("player.setup")],
               ]}
               value={mode}
               onChange={(m) => {
@@ -144,16 +149,19 @@ export default function CasePlayer({
                 go(0);
               }}
             />
-            {share && <ShareButton url={share.url} title={share.title} />}
+            {sharePagePath && (
+              <ShareButton
+                url={siteUrl(sharePath(sharePagePath, lang))}
+                title={t("pattern.title", { name: pattern.name })}
+              />
+            )}
           </div>
 
           <p className="text-muted">
-            {mode === "alg"
-              ? "この形から、アルゴリズムで揃えます。"
-              : "揃った状態から、セットアップでこの形を作ります。"}
+            {t(mode === "alg" ? "player.algNote" : "player.setupNote")}
           </p>
 
-          <ol className="flex flex-wrap gap-1.5" aria-label="手順">
+          <ol className="flex flex-wrap gap-1.5" aria-label={t("player.steps")}>
             {moves.map((m, i) => (
               <li
                 key={i}
@@ -176,33 +184,33 @@ export default function CasePlayer({
           {/* On phones the three step buttons share one row with shortened labels. */}
           <div className="grid grid-cols-[1fr_1fr_1.4fr] gap-2 sm:flex sm:flex-wrap">
             <button className="btn whitespace-nowrap" onClick={() => go(0)} disabled={position === 0}>
-              ⏮ 最初<span className="hidden sm:inline">に戻す</span>
+              <Responsive short={t("player.toStartShort")} long={t("player.toStartLong")} />
             </button>
             <button
               className="btn whitespace-nowrap"
               onClick={() => go(position - 1)}
               disabled={position === 0}
             >
-              ◀ <span className="hidden sm:inline">1 手</span>戻す
+              <Responsive short={t("player.backShort")} long={t("player.backLong")} />
             </button>
             <button
               className="btn-primary whitespace-nowrap"
               onClick={() => go(position + 1)}
               disabled={done}
             >
-              {done ? "おわり" : `${formatMove(moves[position])} を回す ▶`}
+              {done ? t("player.end") : t("player.turn", { move: formatMove(moves[position]) })}
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <button className="btn min-w-[9em]" onClick={togglePlay}>
-              {isPlaying ? "⏸ 止める" : done ? "↺ もう一度再生" : "▶ 自動で再生"}
+              {t(isPlaying ? "player.pause" : done ? "player.replay" : "player.play")}
             </button>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted">速さ</span>
+              <span className="text-sm text-muted">{t("player.speed")}</span>
               <Tabs
                 options={(Object.keys(SPEEDS) as Speed[])
                   .filter((k) => k !== "dopa" || dopa)
-                  .map((k) => [k, SPEEDS[k].label] as const)}
+                  .map((k) => [k, t(SPEEDS[k].label)] as const)}
                 value={speed}
                 onChange={setSpeed}
               />
@@ -210,25 +218,35 @@ export default function CasePlayer({
           </div>
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted">
             <span>
-              {position} / {moves.length} 手
-              {done && (mode === "alg" ? " ・ 揃いました" : " ・ 形ができました")}
+              {t("player.progress", { position, total: moves.length })}
+              {done && t(mode === "alg" ? "player.solved" : "player.built")}
             </span>
             <span className="flex items-center gap-1.5 text-sm">
-              <span className="inline-block size-3 rounded-sm bg-accent" /> いま回した手
+              <span className="inline-block size-3 rounded-sm bg-accent" /> {t("player.current")}
             </span>
             <span className="flex items-center gap-1.5 text-sm">
-              <span className="inline-block size-3 rounded-sm border border-dashed border-accent" /> 次の手
+              <span className="inline-block size-3 rounded-sm border border-dashed border-accent" /> {t("player.upcoming")}
             </span>
           </p>
 
           <dl className="rounded-xl border border-line bg-surface p-3">
-            <dt className="text-sm text-muted">アルゴリズム</dt>
+            <dt className="text-sm text-muted">{t("player.alg")}</dt>
             <dd className="mb-2 font-mono wrap-anywhere">{pattern.alg}</dd>
-            <dt className="text-sm text-muted">セットアップ</dt>
+            <dt className="text-sm text-muted">{t("player.setup")}</dt>
             <dd className="font-mono wrap-anywhere">{setupMoves.map(formatMove).join(" ")}</dd>
           </dl>
         </>
       )}
     </div>
+  );
+}
+
+/** On phones the step buttons share one row, so they get the shorter label. */
+function Responsive({ short, long }: { short: string; long: string }) {
+  return (
+    <>
+      <span className="sm:hidden">{short}</span>
+      <span className="hidden sm:inline">{long}</span>
+    </>
   );
 }

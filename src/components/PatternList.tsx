@@ -6,20 +6,23 @@ import CaseThumb from "./CaseThumb";
 import Segmented from "./Segmented";
 import { useMarks, type MarkStatus } from "@/lib/marks";
 import { PATTERNS, type Pattern, type PatternKind } from "@/data/patterns";
+import type { MessageKey } from "@/i18n/messages";
+import { useT } from "@/i18n/useLang";
 
 type KindFilter = "all" | PatternKind;
 /** Which rows to show, by status. */
 type MarkShow = Record<MarkStatus, boolean>;
 
 const KINDS: readonly PatternKind[] = ["OLL", "PLL"];
-const SHOW_TOGGLES: readonly { status: MarkStatus; label: string; emoji: string }[] = [
-  { status: "learned", label: "覚えた", emoji: "✅" },
-  { status: "practicing", label: "練習中", emoji: "🔁" },
-  { status: "none", label: "まだ", emoji: "☑️" },
+const SHOW_TOGGLES: readonly { status: MarkStatus; label: MessageKey; emoji: string }[] = [
+  { status: "learned", label: "status.learned", emoji: "✅" },
+  { status: "practicing", label: "status.practicing", emoji: "🔁" },
+  { status: "none", label: "status.none", emoji: "☑️" },
 ];
 
 export default function PatternList() {
   const { statusOf } = useMarks();
+  const t = useT();
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [markShow, setMarkShow] = useState<MarkShow>({ learned: true, practicing: true, none: true });
 
@@ -34,9 +37,9 @@ export default function PatternList() {
     <>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Segmented
-          label="種類"
+          label={t("list.kind")}
           options={[
-            { value: "all", label: "すべて", count: countKind("all") },
+            { value: "all", label: t("list.all"), count: countKind("all") },
             { value: "OLL", label: "OLL", count: countKind("OLL") },
             { value: "PLL", label: "PLL", count: countKind("PLL") },
           ]}
@@ -45,17 +48,17 @@ export default function PatternList() {
         />
         <div
           role="group"
-          aria-label="表示する状態"
+          aria-label={t("list.statuses")}
           className="grid auto-cols-fr grid-flow-col gap-1 rounded-xl border border-line bg-surface p-1 sm:inline-grid"
         >
-          {SHOW_TOGGLES.map((t) => (
+          {SHOW_TOGGLES.map((toggle) => (
             <ShowToggle
-              key={t.status}
-              label={t.label}
-              emoji={t.emoji}
-              count={countStatus(inKind, t.status)}
-              checked={markShow[t.status]}
-              onChange={(v) => setMarkShow((s) => ({ ...s, [t.status]: v }))}
+              key={toggle.status}
+              label={t(toggle.label)}
+              emoji={toggle.emoji}
+              count={countStatus(inKind, toggle.status)}
+              checked={markShow[toggle.status]}
+              onChange={(v) => setMarkShow((s) => ({ ...s, [toggle.status]: v }))}
             />
           ))}
         </div>
@@ -75,11 +78,15 @@ export default function PatternList() {
               </span>
               <h2 className="text-xl font-bold">{kind}</h2>
               <span className="text-sm text-muted">
-                {countStatus(all, "learned")} / {all.length} 覚えた・練習中 {countStatus(all, "practicing")}
+                {t("list.summary", {
+                  learned: countStatus(all, "learned"),
+                  total: all.length,
+                  practicing: countStatus(all, "practicing"),
+                })}
               </span>
             </summary>
             {shown.length === 0 ? (
-              <p className="text-muted">該当なし</p>
+              <p className="text-muted">{t("list.empty")}</p>
             ) : (
               <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
                 {shown.map((p) => (
@@ -139,17 +146,18 @@ function ShowToggle({
   );
 }
 
-/** A badge in the status's color: a check on learned rows, 練 on practicing ones. */
+/** A badge in the status's color: a check on learned rows, a short mark on practicing ones. */
 function StatusBadge({ status }: { status: MarkStatus }) {
+  const t = useT();
   if (status === "none") return null;
   const learned = status === "learned";
   return (
     <span
       role="img"
-      aria-label={learned ? "覚えた" : "練習中"}
+      aria-label={t(learned ? "status.learned" : "status.practicing")}
       className={`grid size-6 shrink-0 place-items-center rounded-md text-sm leading-none font-bold text-white ${learned ? "bg-mark" : "bg-practice"}`}
     >
-      {learned ? "✓" : "練"}
+      {learned ? "✓" : t("status.practicingBadge")}
     </span>
   );
 }

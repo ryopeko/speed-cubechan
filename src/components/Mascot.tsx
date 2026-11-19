@@ -5,17 +5,19 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import cubechan from "@/assets/cubechan.png";
 import cubechanDopa from "@/assets/cubechan-dopa.png";
+import { useT } from "@/i18n/useLang";
 import { onDopaEvent, setDopa, useDopa } from "@/lib/dopa";
 
 const PLACE = "fixed right-3 bottom-3 z-50 sm:right-5 sm:bottom-5";
 
 /**
  * The mascot in the bottom-right corner. On a pattern page it is also the
- * hidden switch for ドパモード; elsewhere it ignores taps.
+ * hidden switch for Dopa Mode; elsewhere it ignores taps.
  */
 export default function Mascot() {
   const onPattern = usePathname().startsWith("/patterns/");
   const dopa = useDopa();
+  const t = useT();
   const active = dopa && onPattern;
   // Bumped on every effect so the jump animation restarts.
   const [jump, setJump] = useState(0);
@@ -45,7 +47,7 @@ export default function Mascot() {
   return (
     <button
       aria-pressed={active}
-      aria-label="キュービちゃん"
+      aria-label={t("site.mascot")}
       onClick={() => setDopa(!dopa)}
       className={`${PLACE} cursor-pointer select-none [-webkit-tap-highlight-color:transparent]`}
     >

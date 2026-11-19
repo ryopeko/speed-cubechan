@@ -7,10 +7,13 @@ import QRCode from "qrcode";
 export default function QrCode({
   value,
   label,
+  labelledBy,
   className,
 }: {
   value: string;
-  label: string;
+  /** The accessible name; or give `labelledBy`, the id of an element holding it. */
+  label?: string;
+  labelledBy?: string;
   className?: string;
 }) {
   const { size, data } = QRCode.create(value, { errorCorrectionLevel: "M" }).modules;
@@ -30,7 +33,7 @@ export default function QrCode({
 
   const full = size + MARGIN * 2;
   return (
-    <svg viewBox={`0 0 ${full} ${full}`} className={className} shapeRendering="crispEdges" role="img" aria-label={label}>
+    <svg viewBox={`0 0 ${full} ${full}`} className={className} shapeRendering="crispEdges" role="img" aria-label={label} aria-labelledby={labelledBy}>
       <rect width={full} height={full} fill="#fff" />
       <path d={d} fill="#000" />
     </svg>

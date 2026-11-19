@@ -9,11 +9,13 @@ import {
   LIGHT_RANGE,
   useCubePrefs,
 } from "@/lib/cubePrefs";
+import { useT } from "@/i18n/useLang";
 
 /** A ⚙ button over the cube view that opens background, grid, and lighting settings. */
 export default function CubeSettings() {
   const [open, setOpen] = useState(false);
   const [prefs, update] = useCubePrefs();
+  const t = useT();
   const { bg, grid, light, contrast } = prefs;
 
   return (
@@ -21,12 +23,12 @@ export default function CubeSettings() {
       {open && (
         <div className="flex w-56 flex-col gap-2.5 rounded-lg bg-surface/90 p-3 text-sm shadow-md backdrop-blur">
           <div className="flex items-center gap-1.5">
-            <span className="mr-auto text-muted">背景</span>
+            <span className="mr-auto text-muted">{t("settings.background")}</span>
             {(Object.keys(BACKGROUNDS) as BackgroundId[]).map((id) => (
               <button
                 key={id}
-                title={BACKGROUNDS[id].label}
-                aria-label={`背景: ${BACKGROUNDS[id].label}`}
+                title={t(BACKGROUNDS[id].label)}
+                aria-label={t("settings.backgroundOption", { name: t(BACKGROUNDS[id].label) })}
                 aria-pressed={bg === id}
                 onClick={() => update({ bg: id })}
                 className="size-5 cursor-pointer rounded-full border border-line aria-pressed:ring-2 aria-pressed:ring-accent aria-pressed:ring-offset-1"
@@ -36,7 +38,7 @@ export default function CubeSettings() {
           </div>
 
           <label className="flex items-center justify-between">
-            <span className="text-muted">床のグリッド</span>
+            <span className="text-muted">{t("settings.grid")}</span>
             <input
               type="checkbox"
               checked={grid}
@@ -46,14 +48,14 @@ export default function CubeSettings() {
           </label>
 
           <Slider
-            label="光の強さ"
+            label={t("settings.light")}
             value={light}
             display={light.toFixed(1)}
             range={LIGHT_RANGE}
             onChange={(v) => update({ light: v })}
           />
           <Slider
-            label="コントラスト"
+            label={t("settings.contrast")}
             value={contrast}
             display={`${Math.round(contrast * 100)}`}
             range={CONTRAST_RANGE}
@@ -64,14 +66,14 @@ export default function CubeSettings() {
             className="self-start cursor-pointer text-xs text-accent hover:underline"
             onClick={() => update({ light: DEFAULT_PREFS.light, contrast: DEFAULT_PREFS.contrast })}
           >
-            光を元に戻す
+            {t("settings.resetLight")}
           </button>
         </div>
       )}
       <button
         aria-expanded={open}
-        aria-label="表示の設定"
-        title="表示の設定"
+        aria-label={t("settings.label")}
+        title={t("settings.label")}
         onClick={() => setOpen((o) => !o)}
         className="grid size-8 cursor-pointer place-items-center rounded-lg bg-surface/85 text-muted shadow-sm backdrop-blur hover:text-ink aria-expanded:text-accent"
       >

@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 /*
- * ドパモード: a hidden party mode, switched on by clicking the mascot on a
+ * Dopa Mode (ドパモード): a hidden party mode, switched on by clicking the mascot on a
  * pattern page. Kept in memory only, so a reload turns it off.
  */
 

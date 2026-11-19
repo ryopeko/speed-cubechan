@@ -46,6 +46,17 @@
   a {
     @apply text-accent;
   }
+
+  /* Hidden while the page is re-rendered in the picked language (src/i18n/lang.ts). */
+  html[data-lang-pending] body {
+    visibility: hidden;
+  }
+
+  /* Shown only in one language. English unless <html lang="ja">. */
+  html[lang="ja"] .lang-only-en,
+  html:not([lang="ja"]) .lang-only-ja {
+    display: none;
+  }
 }
 
 /* Shared buttons. Defined as utilities so they can be composed with @apply. */
@@ -62,7 +73,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * ドパモード (hidden): night-fever colors and effects, on <html data-dopa>.
+ * Dopa Mode (hidden): night-fever colors and effects, on <html data-dopa>.
  */
 @theme {
   --animate-dopa-jump: dopa-jump 0.55s cubic-bezier(0.3, 1.6, 0.5, 1);

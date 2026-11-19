@@ -1,7 +1,8 @@
 #!/bin/sh
-# Download the font used by the og:image routes (src/app/**/opengraph-image.tsx):
+# Download the font used by the og:image routes (src/app/**/og-image*.png/route.tsx):
 # Noto Sans JP Bold (SIL OFL 1.1), subset by Google Fonts to the characters
-# below. Re-run this after adding new Japanese text to an og:image.
+# below. Re-run this after adding new Japanese text to the Japanese og:image
+# (og-image.ja.png; its text is the og.* and site.name messages in src/i18n/messages.ts).
 set -eu
 cd "$(dirname "$0")/.."
 
