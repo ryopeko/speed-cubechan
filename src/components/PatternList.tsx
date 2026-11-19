@@ -4,26 +4,31 @@ import Link from "next/link";
 import { useState } from "react";
 import CaseThumb from "./CaseThumb";
 import Segmented from "./Segmented";
-import { useMarks } from "@/lib/marks";
+import { useMarks, type MarkStatus } from "@/lib/marks";
 import { PATTERNS, type Pattern, type PatternKind } from "@/data/patterns";
 
 type KindFilter = "all" | PatternKind;
-/** Which rows to show: learned ones, not-yet ones, or both. */
-type MarkShow = { marked: boolean; unmarked: boolean };
+/** Which rows to show, by status. */
+type MarkShow = Record<MarkStatus, boolean>;
 
 const KINDS: readonly PatternKind[] = ["OLL", "PLL"];
+const SHOW_TOGGLES: readonly { status: MarkStatus; label: string; emoji: string }[] = [
+  { status: "learned", label: "覚えた", emoji: "✅" },
+  { status: "practicing", label: "練習中", emoji: "🔁" },
+  { status: "none", label: "まだ", emoji: "☑️" },
+];
 
 export default function PatternList() {
-  const { isMarked } = useMarks();
+  const { statusOf } = useMarks();
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
-  const [markShow, setMarkShow] = useState<MarkShow>({ marked: true, unmarked: true });
+  const [markShow, setMarkShow] = useState<MarkShow>({ learned: true, practicing: true, none: true });
 
-  const matchesMark = (p: Pattern) => (isMarked(p.id) ? markShow.marked : markShow.unmarked);
+  const matchesMark = (p: Pattern) => markShow[statusOf(p.id)];
   const matchesKind = (p: Pattern, f: KindFilter) => f === "all" || p.kind === f;
   // Each count is what that option would show, given the other filter.
   const countKind = (f: KindFilter) => PATTERNS.filter((p) => matchesMark(p) && matchesKind(p, f)).length;
   const inKind = PATTERNS.filter((p) => matchesKind(p, kindFilter));
-  const markedCount = inKind.filter((p) => isMarked(p.id)).length;
+  const countStatus = (ps: readonly Pattern[], s: MarkStatus) => ps.filter((p) => statusOf(p.id) === s).length;
 
   return (
     <>
@@ -43,20 +48,16 @@ export default function PatternList() {
           aria-label="表示する状態"
           className="grid auto-cols-fr grid-flow-col gap-1 rounded-xl border border-line bg-surface p-1 sm:inline-grid"
         >
-          <ShowToggle
-            label="覚えた"
-            emoji="✅"
-            count={markedCount}
-            checked={markShow.marked}
-            onChange={(v) => setMarkShow((s) => ({ ...s, marked: v }))}
-          />
-          <ShowToggle
-            label="まだ"
-            emoji="☑️"
-            count={inKind.length - markedCount}
-            checked={markShow.unmarked}
-            onChange={(v) => setMarkShow((s) => ({ ...s, unmarked: v }))}
-          />
+          {SHOW_TOGGLES.map((t) => (
+            <ShowToggle
+              key={t.status}
+              label={t.label}
+              emoji={t.emoji}
+              count={countStatus(inKind, t.status)}
+              checked={markShow[t.status]}
+              onChange={(v) => setMarkShow((s) => ({ ...s, [t.status]: v }))}
+            />
+          ))}
         </div>
       </div>
 
@@ -74,7 +75,7 @@ export default function PatternList() {
               </span>
               <h2 className="text-xl font-bold">{kind}</h2>
               <span className="text-sm text-muted">
-                {all.filter((p) => isMarked(p.id)).length} / {all.length} 覚えた
+                {countStatus(all, "learned")} / {all.length} 覚えた・練習中 {countStatus(all, "practicing")}
               </span>
             </summary>
             {shown.length === 0 ? (
@@ -92,7 +93,7 @@ export default function PatternList() {
                         <span className="font-semibold">{p.name}</span>
                         <code className="font-mono text-sm wrap-anywhere text-muted">{p.alg}</code>
                       </span>
-                      {isMarked(p.id) && <LearnedCheck />}
+                      <StatusBadge status={statusOf(p.id)} />
                     </Link>
                   </li>
                 ))}
@@ -138,15 +139,17 @@ function ShowToggle({
   );
 }
 
-/** The same green check as the "覚えた" checkbox, shown on learned rows. */
-function LearnedCheck() {
+/** A badge in the status's color: a check on learned rows, 練 on practicing ones. */
+function StatusBadge({ status }: { status: MarkStatus }) {
+  if (status === "none") return null;
+  const learned = status === "learned";
   return (
     <span
       role="img"
-      aria-label="覚えた"
-      className="grid size-6 shrink-0 place-items-center rounded-md bg-mark text-sm leading-none font-bold text-white"
+      aria-label={learned ? "覚えた" : "練習中"}
+      className={`grid size-6 shrink-0 place-items-center rounded-md text-sm leading-none font-bold text-white ${learned ? "bg-mark" : "bg-practice"}`}
     >
-      ✓
+      {learned ? "✓" : "練"}
     </span>
   );
 }
