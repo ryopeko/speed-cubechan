@@ -23,8 +23,10 @@ const FACE_COLORS = ["#d6122d", "#ff7612", "#f3ec18", "#22cf4b", "#1e6fe0", "#ef
 
 const asset = (path: string) => readFile(join(process.cwd(), "src/assets", path));
 
-// Noto Sans JP Bold, subset to the characters the images use. When adding
-// Japanese text, add it to scripts/fetch-og-font.sh and re-run the script.
+// Noto Sans JP Bold, subset to ASCII and the Japanese characters the
+// og-image.ja.png images use. When adding Japanese text to them (the og.* and
+// site.name messages in src/i18n/messages.ts), add it to
+// scripts/fetch-og-font.sh and re-run the script.
 const font = asset("og/NotoSansJP-Bold.ttf");
 const mascot = asset("cubechan.png").then((b) => `data:image/png;base64,${b.toString("base64")}`);
 
@@ -33,7 +35,7 @@ const MASCOT_ASPECT = 509 / 512;
 
 function Mascot({ src, height }: { src: string; height: number }) {
   // eslint-disable-next-line @next/next/no-img-element -- rendered by ImageResponse, not the browser
-  return <img src={src} alt="" width={Math.round(height * MASCOT_ASPECT)} height={height} />;
+  return <img src={src} alt="" width={Math.round(height * MASCOT_ASPECT)} height={height} style={{ flexShrink: 0 }} />;
 }
 
 export const SITE_HOST = new URL(SITE_URL).host;

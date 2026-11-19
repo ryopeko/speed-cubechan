@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/i18n/useLang";
 
 /**
  * An icon button that opens a small menu: copy the link, or post it to X.
@@ -10,6 +11,7 @@ export default function ShareButton({ url, title }: { url: string; title: string
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   // Close on a click outside or Escape.
   useEffect(() => {
@@ -37,9 +39,9 @@ export default function ShareButton({ url, title }: { url: string; title: string
     setOpen(false);
     try {
       await navigator.clipboard.writeText(url);
-      setNotice("リンクをコピーしました");
+      setNotice(t("share.copied"));
     } catch {
-      setNotice("コピーできませんでした");
+      setNotice(t("share.copyFailed"));
     }
   };
 
@@ -51,8 +53,8 @@ export default function ShareButton({ url, title }: { url: string; title: string
     <div ref={ref} className="relative">
       <button
         className="btn grid size-10 place-items-center p-0! aria-expanded:border-accent aria-expanded:text-accent"
-        aria-label="共有"
-        title="共有"
+        aria-label={t("share.label")}
+        title={t("share.label")}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -66,7 +68,7 @@ export default function ShareButton({ url, title }: { url: string; title: string
         >
           <button role="menuitem" className={item} onClick={copyLink}>
             <LinkIcon />
-            リンクをコピー
+            {t("share.copy")}
           </button>
           <a
             role="menuitem"
@@ -76,7 +78,8 @@ export default function ShareButton({ url, title }: { url: string; title: string
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
           >
-            <XIcon />X でポスト
+            <XIcon />
+            {t("share.x")}
           </a>
         </div>
       )}

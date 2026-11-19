@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-/** Where a pattern is in learning. Patterns with no entry are "none" (まだ). */
+/** Where a pattern is in learning. Patterns with no entry are "none" (not yet). */
 export type MarkStatus = "none" | "practicing" | "learned";
 /** Pattern id -> status, for the patterns that have one. */
 export type Marks = Readonly<Record<string, Exclude<MarkStatus, "none">>>;

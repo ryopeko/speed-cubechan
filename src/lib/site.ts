@@ -5,3 +5,10 @@ export const SITE_URL = (
 
 /** Absolute URL on the deployed site, e.g. siteUrl("/patterns/oll-1/"). */
 export const siteUrl = (path: string) => SITE_URL + path;
+
+/**
+ * Where to share `path` (a page path like "/patterns/oll-1/") in a language.
+ * Japanese links go to the share page under /ja/, whose link preview is in
+ * Japanese and which forwards to `path` shown in Japanese (src/app/ja/).
+ */
+export const sharePath = (path: string, lang: "en" | "ja") => (lang === "ja" ? `/ja${path}` : path);

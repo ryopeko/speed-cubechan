@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { translate } from "@/i18n/messages";
+import { currentLang } from "@/i18n/useLang";
 import { onDopaEvent, useDopa, type DopaEvent } from "@/lib/dopa";
 
 /*
- * ドパモード's show: a disco background behind the page, and on each event a
+ * Dopa Mode's show: a disco background behind the page, and on each event a
  * confetti burst, a flash, and big pop-up text over the cube.
  * Everything is CSS and one canvas; nothing renders while the mode is off.
  */
@@ -144,7 +146,7 @@ function Show() {
           rain(160);
         }
       } else {
-        popup({ text: "ドパモード", sub: "ON!", big: true, x: innerWidth / 2, y: innerHeight / 2 }, 1500);
+        popup({ text: translate(currentLang(), "dopa.start"), sub: "ON!", big: true, x: innerWidth / 2, y: innerHeight / 2 }, 1500);
         if (!reduced) rain(120);
       }
       if (!reduced) setFlash((f) => f + 1);

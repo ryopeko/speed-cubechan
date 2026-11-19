@@ -6,8 +6,10 @@ import Main, { Title } from "@/components/Main";
 import MarkButton from "@/components/MarkButton";
 import QrCode from "@/components/QrCode";
 import { findPattern, PATTERNS } from "@/data/patterns";
+import { LANGS, translate } from "@/i18n/messages";
+import T, { DocTitle } from "@/i18n/T";
 import { ogMetadata } from "@/lib/og";
-import { siteUrl } from "@/lib/site";
+import { sharePath, siteUrl } from "@/lib/site";
 
 export function generateStaticParams() {
   return PATTERNS.map((p) => ({ id: p.id }));
@@ -17,8 +19,8 @@ export async function generateMetadata(props: PageProps<"/patterns/[id]">) {
   const { id } = await props.params;
   const name = findPattern(id)?.name ?? "?";
   return {
-    title: `${name} | スピードキュービちゃん`,
-    ...ogMetadata(`/patterns/${id}/og-image.png`, `${name} のケースの図`),
+    title: translate("en", "pattern.title", { name }),
+    ...ogMetadata(`/patterns/${id}/og-image.png`, translate("en", "pattern.ogAlt", { name })),
   };
 }
 
@@ -39,6 +41,7 @@ async function PatternDetail({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
+      <DocTitle k="pattern.title" vars={{ name: pattern.name }} />
       <div className="mb-2 flex items-center justify-between gap-3">
         <Title>{pattern.name}</Title>
         <MarkButton id={pattern.id} />
@@ -46,16 +49,23 @@ async function PatternDetail({ params }: { params: Promise<{ id: string }> }) {
       <CasePlayer
         key={pattern.id}
         pattern={pattern}
-        share={{ url: siteUrl(`/patterns/${pattern.id}/`), title: `${pattern.name} | スピードキュービちゃん` }}
+        sharePagePath={`/patterns/${pattern.id}/`}
       />
       <section className="mt-8 flex items-center gap-4 rounded-xl border border-line bg-surface p-4">
-        <QrCode
-          value={siteUrl(`/patterns/${pattern.id}/`)}
-          label={`${pattern.name} のページの QR コード`}
-          className="size-28 shrink-0 rounded-md"
-        />
+        {/* One code per language (the Japanese one opens the /ja/ share page); CSS shows the current one. */}
+        {LANGS.map((lang) => (
+          <QrCode
+            key={lang}
+            value={siteUrl(sharePath(`/patterns/${pattern.id}/`, lang))}
+            labelledBy="qr-label"
+            className={`size-28 shrink-0 rounded-md lang-only-${lang}`}
+          />
+        ))}
+        <span id="qr-label" hidden>
+          <T k="pattern.qrLabel" vars={{ name: pattern.name }} />
+        </span>
         <p className="text-sm text-muted">
-          スマホのカメラで読み取ると、この {pattern.name} のページが開きます。
+          <T k="pattern.qrNote" vars={{ name: pattern.name }} />
         </p>
       </section>
     </>
