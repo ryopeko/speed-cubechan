@@ -19,6 +19,7 @@
   --color-line: #e2ded4;
   --color-accent: #1e6fe0;
   --color-mark: #1f9e47;
+  --color-practice: #c4650a;
 
   --font-sans: system-ui, -apple-system, "Hiragino Sans", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -34,6 +35,7 @@
       --color-line: #3a3832;
       --color-accent: #4b8ef0;
       --color-mark: #3ccf63;
+      --color-practice: #e08a1e;
     }
   }
 
@@ -96,6 +98,7 @@ html[data-dopa] {
   --color-line: #6d2fd1;
   --color-accent: #ff2bd6;
   --color-mark: #39ff88;
+  --color-practice: #ff8a1f;
 }
 
 html[data-dopa] body {

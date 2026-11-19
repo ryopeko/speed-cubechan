@@ -6,7 +6,7 @@ import CasePlayer from "./CasePlayer";
 import MarkButton from "./MarkButton";
 import Tabs from "./Tabs";
 import { useMarks } from "@/lib/marks";
-import { findPattern, type Pattern, type PatternKind } from "@/data/patterns";
+import { PATTERNS, type Pattern, type PatternKind } from "@/data/patterns";
 
 type KindFilter = "all" | PatternKind;
 
@@ -17,16 +17,14 @@ function pick(pool: readonly Pattern[], current?: Pattern): Pattern | undefined 
 }
 
 export default function Practice() {
-  const { marked } = useMarks();
+  const { marks } = useMarks();
   const [kind, setKind] = useState<KindFilter>("all");
   const [current, setCurrent] = useState<Pattern>();
   const [revealed, setRevealed] = useState(false);
   // Bumped on every draw so the player resets even if the same case comes up again.
   const [round, setRound] = useState(0);
 
-  const pool = marked
-    .map(findPattern)
-    .filter((p): p is Pattern => !!p && (kind === "all" || p.kind === kind));
+  const pool = PATTERNS.filter((p) => marks[p.id] === "learned" && (kind === "all" || p.kind === kind));
 
   const next = () => {
     setCurrent(pick(pool, current));
