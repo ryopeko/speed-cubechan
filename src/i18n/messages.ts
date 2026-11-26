@@ -101,6 +101,9 @@ const en = {
 
   "og.tagline": "An OLL & PLL practice tool",
   "og.kind": "{kind} practice",
+
+  "terms.title": "Terms of Service",
+  "terms.pageTitle": "Terms of Service | Speed Cube-chan",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -202,6 +205,9 @@ const ja: Record<MessageKey, string> = {
 
   "og.tagline": "OLL・PLL の練習ツール",
   "og.kind": "{kind} の練習",
+
+  "terms.title": "利用規約",
+  "terms.pageTitle": "利用規約 | スピードキュービちゃん",
 };
 
 export const MESSAGES = { en, ja } as const;
