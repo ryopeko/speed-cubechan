@@ -36,6 +36,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <LangSwitch />
         </header>
         {children}
+        <footer className="mx-auto max-w-3xl px-4 pb-6 text-sm">
+          <Link href="/terms/" className="text-muted hover:text-ink">
+            <T k="terms.title" />
+          </Link>
+        </footer>
         {/* The mascot stands in front of the page (and hides Dopa Mode's switch). */}
         <Mascot />
         <DopaEffects />
