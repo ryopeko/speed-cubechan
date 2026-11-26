@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Cube from "./Cube";
+import { CUBE_BOX } from "./cubeBox";
 import { useT } from "@/i18n/useLang";
-import { newScramble } from "@/lib/scramble";
+import type { Move } from "@/lib/cube";
+import { newScramble, scrambledState } from "@/lib/scramble";
 import { averageOf, best, formatTime, useSolves } from "@/lib/solves";
 
 /**
@@ -21,6 +24,9 @@ const PHASE_COLOR: Record<Phase, string> = {
   running: "text-ink",
 };
 
+/** The 3D view shows a still state, so it gets no moves to play. */
+const NO_MOVES: readonly Move[] = [];
+
 const MODIFIER_KEYS = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "Tab"]);
 
 export default function Timer() {
@@ -30,6 +36,7 @@ export default function Timer() {
   const [shown, setShown] = useState(0);
   // Made in the browser only, so the static HTML does not fix one scramble for everyone.
   const [scramble, setScramble] = useState<string>();
+  const scrambled = useMemo(() => (scramble === undefined ? undefined : scrambledState(scramble)), [scramble]);
   // After a tap stops the timer, the overlay stays until that tap's click, so it lands nowhere else.
   const [overlayHeld, setOverlayHeld] = useState(false);
 
@@ -148,6 +155,9 @@ export default function Timer() {
           </button>
         </div>
         <p className="mt-2 min-h-[2lh] font-mono text-lg break-words sm:text-xl">{scramble}</p>
+        <div className="mt-3">
+          {scrambled ? <Cube start={scrambled} moves={NO_MOVES} position={0} /> : <div className={CUBE_BOX} />}
+        </div>
       </section>
 
       <div

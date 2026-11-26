@@ -1,6 +1,6 @@
-// Scrambles for the solve timer: random face turns, written in the usual notation.
+// Scramble moves, written in the usual notation, and the state they leave the cube in.
 
-import { formatMoves, type Move } from "./cube";
+import { applyMoves, formatMoves, parseAlg, SOLVED, type CubeState, type Face, type Move } from "./cube";
 
 const FACES = ["U", "D", "R", "L", "F", "B"] as const;
 type ScrambleFace = (typeof FACES)[number];
@@ -35,4 +35,17 @@ export function randomScramble(length = SCRAMBLE_LENGTH, random: () => number = 
 /** A new scramble as text, e.g. "R U2 F' ...". */
 export function newScramble(): string {
   return formatMoves(randomScramble());
+}
+
+/**
+ * Solved, held the way WCA scrambles are applied: white on top, green in front.
+ * The rest of the app holds yellow on top, so this is SOLVED turned upside down
+ * (z2): U and D, and R and L, swap colors.
+ */
+const WCA_FLIP: Record<Face, Face> = { U: "D", D: "U", R: "L", L: "R", F: "F", B: "B" };
+export const SCRAMBLE_START: CubeState = SOLVED.map((c) => WCA_FLIP[c]);
+
+/** The cube after `scramble` is applied from SCRAMBLE_START. */
+export function scrambledState(scramble: string): CubeState {
+  return applyMoves(SCRAMBLE_START, parseAlg(scramble));
 }
