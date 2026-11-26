@@ -33,6 +33,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Image src={cubechan} alt="" className="size-9" preload />
             <T k="site.name" />
           </Link>
+          <nav className="ml-auto text-sm">
+            <Link href="/timer" className="font-semibold">
+              <T k="timer.title" />
+            </Link>
+          </nav>
           <LangSwitch />
         </header>
         {children}

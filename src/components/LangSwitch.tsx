@@ -19,7 +19,7 @@ export default function LangSwitch() {
   }, [lang]);
 
   return (
-    <div role="group" aria-label={t("lang.label")} className="ml-auto flex gap-0.5 rounded-lg border border-line p-0.5 text-xs">
+    <div role="group" aria-label={t("lang.label")} className="flex gap-0.5 rounded-lg border border-line p-0.5 text-xs">
       {LANGS.map((l) => (
         <button
           key={l}
